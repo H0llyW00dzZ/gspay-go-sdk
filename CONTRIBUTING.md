@@ -14,7 +14,7 @@ Thank you for your interest in contributing to the GSPAY Go SDK! This document p
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.25 or later
 - Git
 - Basic understanding of Go modules and testing
 
@@ -23,7 +23,7 @@ Thank you for your interest in contributing to the GSPAY Go SDK! This document p
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/gspay-go-sdk.git
+   git clone https://github.com/H0llyW00dzZ/gspay-go-sdk.git
    cd gspay-go-sdk
    ```
 
