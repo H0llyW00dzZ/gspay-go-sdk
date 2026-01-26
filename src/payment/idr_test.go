@@ -233,3 +233,54 @@ func TestIDRService_VerifyCallback(t *testing.T) {
 		assert.Equal(t, "amount", valErr.Field)
 	})
 }
+
+func TestIDRService_VerifyCallbackWithIP(t *testing.T) {
+	t.Run("verifies callback with whitelisted IP", func(t *testing.T) {
+		c := client.New("auth-key", "secret-key", client.WithCallbackIPWhitelist("192.168.1.1"))
+		svc := NewIDRService(c)
+
+		callback := &IDRCallback{
+			IDRPaymentID:  "PAY123",
+			Amount:        "50000.00",
+			TransactionID: "TXN123",
+			Status:        1,
+			Signature:     signature.Generate("PAY12350000.00TXN1231secret-key"),
+		}
+
+		err := svc.VerifyCallbackWithIP(callback, "192.168.1.1")
+		assert.NoError(t, err)
+	})
+
+	t.Run("rejects callback with non-whitelisted IP", func(t *testing.T) {
+		c := client.New("auth-key", "secret-key", client.WithCallbackIPWhitelist("192.168.1.1"))
+		svc := NewIDRService(c)
+
+		callback := &IDRCallback{
+			IDRPaymentID:  "PAY123",
+			Amount:        "50000.00",
+			TransactionID: "TXN123",
+			Status:        1,
+			Signature:     signature.Generate("PAY12350000.00TXN1231secret-key"),
+		}
+
+		err := svc.VerifyCallbackWithIP(callback, "192.168.1.2")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, errors.ErrIPNotWhitelisted)
+	})
+
+	t.Run("skips IP check when no whitelist configured", func(t *testing.T) {
+		c := client.New("auth-key", "secret-key")
+		svc := NewIDRService(c)
+
+		callback := &IDRCallback{
+			IDRPaymentID:  "PAY123",
+			Amount:        "50000.00",
+			TransactionID: "TXN123",
+			Status:        1,
+			Signature:     signature.Generate("PAY12350000.00TXN1231secret-key"),
+		}
+
+		err := svc.VerifyCallbackWithIP(callback, "any.ip")
+		assert.NoError(t, err)
+	})
+}
