@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -174,4 +175,132 @@ func TestFormatAmountUSDT(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestWithCallbackIPWhitelist(t *testing.T) {
+	t.Run("configures IP whitelist", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist(
+			"192.168.1.1",
+			"10.0.0.0/8",
+		))
+
+		assert.Len(t, c.CallbackIPWhitelist, 2)
+		assert.Contains(t, c.CallbackIPWhitelist, "192.168.1.1")
+		assert.Contains(t, c.CallbackIPWhitelist, "10.0.0.0/8")
+	})
+
+	t.Run("parses IPs and CIDRs correctly", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist(
+			"192.168.1.1",
+			"10.0.0.0/8",
+			"2001:db8::1",
+			"2001:db8::/32",
+		))
+
+		assert.Len(t, c.parsedIPs, 2)    // 192.168.1.1 and 2001:db8::1
+		assert.Len(t, c.parsedIPNets, 2) // 10.0.0.0/8 and 2001:db8::/32
+	})
+}
+
+func TestIsIPWhitelisted(t *testing.T) {
+	t.Run("allows all IPs when whitelist is empty", func(t *testing.T) {
+		c := New("auth", "secret")
+
+		assert.True(t, c.IsIPWhitelisted("192.168.1.1"))
+		assert.True(t, c.IsIPWhitelisted("10.0.0.1"))
+		assert.True(t, c.IsIPWhitelisted("any.invalid.ip"))
+	})
+
+	t.Run("matches exact IP address", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1", "10.0.0.1"))
+
+		assert.True(t, c.IsIPWhitelisted("192.168.1.1"))
+		assert.True(t, c.IsIPWhitelisted("10.0.0.1"))
+		assert.False(t, c.IsIPWhitelisted("192.168.1.2"))
+		assert.False(t, c.IsIPWhitelisted("172.16.0.1"))
+	})
+
+	t.Run("matches CIDR range", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("10.0.0.0/8", "192.168.0.0/16"))
+
+		assert.True(t, c.IsIPWhitelisted("10.0.0.1"))
+		assert.True(t, c.IsIPWhitelisted("10.255.255.255"))
+		assert.True(t, c.IsIPWhitelisted("192.168.1.1"))
+		assert.True(t, c.IsIPWhitelisted("192.168.255.255"))
+		assert.False(t, c.IsIPWhitelisted("172.16.0.1"))
+		assert.False(t, c.IsIPWhitelisted("11.0.0.1"))
+	})
+
+	t.Run("handles IP with port", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		assert.True(t, c.IsIPWhitelisted("192.168.1.1:8080"))
+		assert.True(t, c.IsIPWhitelisted("192.168.1.1:443"))
+		assert.False(t, c.IsIPWhitelisted("192.168.1.2:8080"))
+	})
+
+	t.Run("handles IPv6 addresses", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("2001:db8::1", "fe80::/10"))
+
+		assert.True(t, c.IsIPWhitelisted("2001:db8::1"))
+		assert.True(t, c.IsIPWhitelisted("fe80::1"))
+		assert.True(t, c.IsIPWhitelisted("fe80:0000:0000:0000:0000:0000:0000:0001"))
+		assert.False(t, c.IsIPWhitelisted("2001:db8::2"))
+	})
+
+	t.Run("handles IPv6 with port", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("2001:db8::1"))
+
+		assert.True(t, c.IsIPWhitelisted("[2001:db8::1]:8080"))
+		assert.False(t, c.IsIPWhitelisted("[2001:db8::2]:8080"))
+	})
+
+	t.Run("returns false for invalid IP", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		assert.False(t, c.IsIPWhitelisted("invalid-ip"))
+		assert.False(t, c.IsIPWhitelisted(""))
+	})
+}
+
+func TestVerifyCallbackIP(t *testing.T) {
+	t.Run("returns nil when whitelist is empty", func(t *testing.T) {
+		c := New("auth", "secret")
+
+		err := c.VerifyCallbackIP("192.168.1.1")
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns nil for whitelisted IP", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		err := c.VerifyCallbackIP("192.168.1.1")
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error for non-whitelisted IP", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		err := c.VerifyCallbackIP("192.168.1.2")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, errors.ErrIPNotWhitelisted)
+	})
+
+	t.Run("returns error for invalid IP format", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		err := c.VerifyCallbackIP("invalid-ip")
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, errors.ErrInvalidIPAddress)
+	})
+
+	t.Run("handles IP with port correctly", func(t *testing.T) {
+		c := New("auth", "secret", WithCallbackIPWhitelist("192.168.1.1"))
+
+		err := c.VerifyCallbackIP("192.168.1.1:8080")
+		assert.NoError(t, err)
+
+		err = c.VerifyCallbackIP("192.168.1.2:8080")
+		assert.ErrorIs(t, err, errors.ErrIPNotWhitelisted)
+	})
 }

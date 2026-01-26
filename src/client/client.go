@@ -16,11 +16,13 @@
 package client
 
 import (
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/signature"
 )
 
@@ -42,6 +44,13 @@ type Client struct {
 	RetryWaitMin time.Duration
 	// RetryWaitMax is the maximum wait time between retries.
 	RetryWaitMax time.Duration
+	// CallbackIPWhitelist contains allowed IP addresses/CIDR ranges for callbacks.
+	// If empty, IP validation is skipped.
+	CallbackIPWhitelist []string
+	// parsedIPNets contains parsed CIDR networks for efficient IP checking.
+	parsedIPNets []*net.IPNet
+	// parsedIPs contains parsed individual IP addresses.
+	parsedIPs []net.IP
 }
 
 // Option is a functional option for configuring the Client.
@@ -87,6 +96,25 @@ func WithRetryWait(min, max time.Duration) Option {
 	}
 }
 
+// WithCallbackIPWhitelist sets the allowed IP addresses or CIDR ranges for callback verification.
+//
+// Accepts individual IP addresses (e.g., "192.168.1.1") or CIDR notation (e.g., "192.168.1.0/24").
+// If the whitelist is empty, IP validation is skipped during callback verification.
+//
+// Example:
+//
+//	client.New("auth", "secret", client.WithCallbackIPWhitelist(
+//	    "192.168.1.1",
+//	    "10.0.0.0/8",
+//	    "2001:db8::/32",
+//	))
+func WithCallbackIPWhitelist(ips ...string) Option {
+	return func(c *Client) {
+		c.CallbackIPWhitelist = ips
+		c.parseIPWhitelist()
+	}
+}
+
 // New creates a new GSPAY2 API client.
 //
 // Parameters:
@@ -125,4 +153,96 @@ func (c *Client) GenerateSignature(data string) string {
 // VerifySignature verifies a callback signature.
 func (c *Client) VerifySignature(expected, actual string) bool {
 	return signature.Verify(expected, actual)
+}
+
+// parseIPWhitelist parses the IP whitelist into net.IP and net.IPNet for efficient checking.
+func (c *Client) parseIPWhitelist() {
+	c.parsedIPNets = nil
+	c.parsedIPs = nil
+
+	for _, ipStr := range c.CallbackIPWhitelist {
+		// Try parsing as CIDR first
+		if _, ipNet, err := net.ParseCIDR(ipStr); err == nil {
+			c.parsedIPNets = append(c.parsedIPNets, ipNet)
+			continue
+		}
+
+		// Try parsing as individual IP
+		if ip := net.ParseIP(ipStr); ip != nil {
+			c.parsedIPs = append(c.parsedIPs, ip)
+		}
+	}
+}
+
+// IsIPWhitelisted checks if the given IP address is in the whitelist.
+//
+// Returns true if:
+//   - The whitelist is empty (IP validation disabled)
+//   - The IP matches an individual whitelisted IP
+//   - The IP falls within a whitelisted CIDR range
+//
+// The ipStr parameter can include a port (e.g., "192.168.1.1:8080"),
+// which will be automatically stripped before validation.
+func (c *Client) IsIPWhitelisted(ipStr string) bool {
+	// If no whitelist configured, allow all IPs
+	if len(c.CallbackIPWhitelist) == 0 {
+		return true
+	}
+
+	// Strip port if present (handles both IPv4 and IPv6)
+	host := ipStr
+	if h, _, err := net.SplitHostPort(ipStr); err == nil {
+		host = h
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+
+	// Check individual IPs
+	for _, whitelistedIP := range c.parsedIPs {
+		if whitelistedIP.Equal(ip) {
+			return true
+		}
+	}
+
+	// Check CIDR ranges
+	for _, ipNet := range c.parsedIPNets {
+		if ipNet.Contains(ip) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// VerifyCallbackIP verifies that the callback request originates from a whitelisted IP.
+//
+// Returns nil if the IP is whitelisted or if the whitelist is empty.
+// Returns ErrIPNotWhitelisted if the IP is not in the whitelist.
+// Returns ErrInvalidIPAddress if the IP address format is invalid.
+func (c *Client) VerifyCallbackIP(ipStr string) error {
+	// If no whitelist configured, skip IP validation
+	if len(c.CallbackIPWhitelist) == 0 {
+		return nil
+	}
+
+	// Strip port if present
+	host := ipStr
+	if h, _, err := net.SplitHostPort(ipStr); err == nil {
+		host = h
+	}
+
+	// Validate IP format
+	if net.ParseIP(host) == nil {
+		return errors.ErrInvalidIPAddress
+	}
+
+	// Check whitelist
+	if !c.IsIPWhitelisted(ipStr) {
+		return errors.ErrIPNotWhitelisted
+	}
+
+	return nil
 }

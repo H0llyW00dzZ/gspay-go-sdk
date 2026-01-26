@@ -125,7 +125,33 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 // VerifyCallback verifies the signature of a USDT payment callback.
 //
 // Callback Signature formula: MD5(cryptopayment_id + amount + transaction_id + status + secret_key)
+//
+// This method only verifies the signature. To also verify the source IP,
+// use [USDTService.VerifyCallbackWithIP] instead.
 func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
+	return s.verifyCallbackSignature(callback)
+}
+
+// VerifyCallbackWithIP verifies both the signature and source IP of a USDT payment callback.
+//
+// The sourceIP parameter should be the IP address of the callback request,
+// typically obtained from [http.Request.RemoteAddr] or the X-Forwarded-For header.
+//
+// If the client was configured with [WithCallbackIPWhitelist], this method will
+// verify that the source IP is in the whitelist before verifying the signature.
+// If no whitelist was configured, IP verification is skipped.
+func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP string) error {
+	// Verify IP first (fast fail)
+	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		return err
+	}
+
+	// Then verify signature
+	return s.verifyCallbackSignature(callback)
+}
+
+// verifyCallbackSignature performs the actual signature verification.
+func (s *USDTService) verifyCallbackSignature(callback *USDTCallback) error {
 	// Check required fields
 	if callback.CryptoPaymentID == "" {
 		return fmt.Errorf("%w: cryptopayment_id", errors.ErrMissingCallbackField)
