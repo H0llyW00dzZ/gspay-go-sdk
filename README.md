@@ -462,6 +462,10 @@ fmt.Println(status.String()) // "Success", "Pending/Expired", etc.
 // Generate unique transaction ID (max 20 chars)
 txnID := client.GenerateTransactionID("TXN")
 // Result: "TXN20260126143022123"
+
+// Generate cryptographically secure UUID-based transaction ID
+txnID := client.GenerateUUIDTransactionID("TXN")
+// Result: "TXN550e8400-e29b-41"
 ```
 
 ### Build Return URL

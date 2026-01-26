@@ -56,7 +56,7 @@ func main() {
 	// Example 1: Create IDR Payment
 	fmt.Println("=== Creating IDR Payment ===")
 	paymentResp, err := paymentSvc.Create(ctx, &payment.IDRRequest{
-		TransactionID: client.GenerateTransactionID("TXN"),
+		TransactionID: client.GenerateUUIDTransactionID("TXN"),
 		Username:      "demo_user",
 		Amount:        50000,
 		Channel:       constants.ChannelQRIS,
