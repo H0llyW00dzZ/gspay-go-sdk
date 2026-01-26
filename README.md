@@ -517,6 +517,37 @@ Run tests with coverage:
 go test ./... -cover
 ```
 
+## 🚧 Roadmap & TODO
+
+### **Payment Method Expansion**
+The SDK currently supports **Indonesia (IDR)** payments. Future releases will add support for additional APAC markets:
+
+- [ ] **Thailand (THB) Payment Support**
+  - [ ] Implement THB payment service (`src/payment/thb.go`)
+  - [ ] Add THB callback verification
+  - [ ] Support THB bank transfers and QR payments
+  - [ ] Add THB payment tests
+
+- [ ] **Malaysia (MYR) Payment Support**
+  - [ ] Implement MYR payment service (`src/payment/myr.go`)
+  - [ ] Add MYR callback verification
+  - [ ] Support MYR bank transfers and DuitNow
+  - [ ] Add MYR payment tests
+
+
+### **Enhancement Backlog**
+- [ ] Add webhook signature verification middleware
+- [ ] Implement payment status polling with webhooks
+- [ ] Add rate limiting and request throttling
+- [ ] Support for custom HTTP clients and proxies
+- [ ] Add comprehensive logging and metrics
+- [ ] Implement payment reconciliation utilities
+- [ ] Add support for partial refunds (if supported by API)
+- [ ] Multi-currency balance queries
+
+### **Contributing**
+Contributions for expanding payment method support are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for details.
+
 ## Disclaimer
 
 This is an **unofficial** SDK. It is not affiliated with, endorsed by, or officially supported by GSPAY or its parent company. This SDK was independently developed by the community to provide Go language compatibility for integrating with the GSPAY2 Payment Gateway API.
