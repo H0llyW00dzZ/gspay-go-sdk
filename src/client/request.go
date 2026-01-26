@@ -37,9 +37,7 @@ type Response struct {
 }
 
 // IsSuccess checks if the API response indicates success.
-func (r *Response) IsSuccess() bool {
-	return r.Code == 200
-}
+func (r *Response) IsSuccess() bool { return r.Code == 200 }
 
 // DoRequest performs an HTTP request with retry logic.
 func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body any) (*Response, error) {

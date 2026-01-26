@@ -29,14 +29,10 @@ type Response struct {
 }
 
 // Service handles balance operations.
-type Service struct {
-	client *client.Client
-}
+type Service struct{ client *client.Client }
 
 // NewService creates a new balance service.
-func NewService(c *client.Client) *Service {
-	return &Service{client: c}
-}
+func NewService(c *client.Client) *Service { return &Service{client: c} }
 
 // Get queries the operator's available settlement balance.
 func (s *Service) Get(ctx context.Context) (*Response, error) {

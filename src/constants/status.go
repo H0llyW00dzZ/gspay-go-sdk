@@ -48,14 +48,10 @@ func (s PaymentStatus) IsSuccess() bool {
 }
 
 // IsFailed returns true if the status indicates a failed or timed out payment.
-func (s PaymentStatus) IsFailed() bool {
-	return s == StatusFailed || s == StatusTimeout
-}
+func (s PaymentStatus) IsFailed() bool { return s == StatusFailed || s == StatusTimeout }
 
 // IsPending returns true if the status indicates a pending payment.
-func (s PaymentStatus) IsPending() bool {
-	return s == StatusPending
-}
+func (s PaymentStatus) IsPending() bool { return s == StatusPending }
 
 // ParsePaymentStatus converts an integer status code to PaymentStatus type.
 func ParsePaymentStatus(status int) PaymentStatus {

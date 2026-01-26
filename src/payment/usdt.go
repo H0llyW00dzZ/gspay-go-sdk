@@ -68,9 +68,7 @@ type USDTCallback struct {
 }
 
 // USDTService handles USDT payment operations.
-type USDTService struct {
-	client *client.Client
-}
+type USDTService struct{ client *client.Client }
 
 // NewUSDTService creates a new USDT payment service.
 func NewUSDTService(c *client.Client) *USDTService {

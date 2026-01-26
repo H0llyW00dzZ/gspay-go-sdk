@@ -89,14 +89,10 @@ type IDRCallback struct {
 }
 
 // IDRService handles IDR payment operations.
-type IDRService struct {
-	client *client.Client
-}
+type IDRService struct{ client *client.Client }
 
 // NewIDRService creates a new IDR payment service.
-func NewIDRService(c *client.Client) *IDRService {
-	return &IDRService{client: c}
-}
+func NewIDRService(c *client.Client) *IDRService { return &IDRService{client: c} }
 
 // Create creates a new IDR payment order.
 //
