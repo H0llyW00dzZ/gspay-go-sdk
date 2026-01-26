@@ -318,6 +318,69 @@ if err != nil {
 }
 ```
 
+## Security Considerations
+
+### MD5 Signatures
+
+The GSPAY2 API requires MD5-based signatures for request authentication and callback verification. While functional for basic API security, MD5 has known cryptographic weaknesses including:
+
+- **Collision Attacks**: Can produce identical hashes for different inputs
+- **Preimage Attacks**: Easier to reverse than modern algorithms
+- **Rainbow Table Attacks**: Vulnerable to precomputed lookup tables
+
+**Important**: This is a **requirement of the GSPAY2 API provider**, not a choice in our implementation. We implement MD5 signatures exactly as specified in their documentation.
+
+### Security Best Practices
+
+To enhance security despite MD5 limitations:
+
+1. **Always Use HTTPS**: Ensure all API communications use TLS 1.3 or higher
+2. **Implement Rate Limiting**: Protect against brute force and replay attacks
+3. **Include Timestamps**: Add timestamp validation to prevent replay attacks
+4. **Verify Callbacks**: Always verify webhook signatures before processing
+5. **IP Whitelisting**: Use `VerifyCallbackWithIP()` for additional IP-based validation
+6. **Request Signing**: Combine with HMAC if additional security layers are needed
+
+### Recommended Additional Security Measures
+
+```go
+// Example: Add timestamp validation
+func validateTimestamp(timestamp int64) bool {
+    now := time.Now().Unix()
+    // Allow 5-minute window for clock skew
+    return timestamp >= now-300 && timestamp <= now+300
+}
+
+// Example: Rate limiting
+var requestLimiter = tollbooth.NewLimiter(10, nil) // 10 requests/second
+```
+
+### Transport Security
+
+- All API endpoints use HTTPS by default
+- TLS certificate validation is enabled
+- No sensitive data is logged in plain text
+
+### Callback Security
+
+The SDK provides robust callback verification:
+
+```go
+// Always verify signatures
+if err := paymentSvc.VerifyCallback(&callback); err != nil {
+    // Reject invalid callbacks
+    return
+}
+
+// Optional: Add IP whitelisting
+if err := paymentSvc.VerifyCallbackWithIP(&callback, clientIP); err != nil {
+    // Reject from unauthorized IPs
+    return
+}
+```
+
+**Note**: While MD5 provides basic integrity checking, consider implementing additional security layers for high-value transactions or enterprise deployments.
+
 ## Supported Banks
 
 ### Indonesia (IDR)
