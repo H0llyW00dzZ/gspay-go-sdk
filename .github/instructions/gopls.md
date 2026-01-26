@@ -16,7 +16,7 @@ Get the definition location of a symbol at a specific position in a Go file.
 - `column` (integer, required): Column number (1-based, in bytes)
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/client/client.go",
   "line": 45,
@@ -39,7 +39,7 @@ Find all references to a symbol at a specific position.
 - `column` (integer, required): Column number (1-based, in bytes)
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/constants/status.go",
   "line": 15,
@@ -62,7 +62,7 @@ Get hover information (documentation, type info) for a symbol.
 - `column` (integer, required): Column number (1-based, in bytes)
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/payment/idr.go",
   "line": 50,
@@ -83,7 +83,7 @@ Get code lenses for a Go file (e.g., run/debug test links).
 - `file` (string, required): Absolute path to the Go file
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/client/client_test.go"
 }
@@ -101,7 +101,7 @@ Get diagnostics (errors, warnings) for a Go file.
 - `file` (string, required): Absolute path to the Go file
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/payment/idr.go"
 }
@@ -120,7 +120,7 @@ Get all symbols (functions, types, variables) defined in a Go file.
 - `file` (string, required): Absolute path to the Go file
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/client/client.go"
 }
@@ -141,7 +141,7 @@ Find implementations of an interface or method.
 - `column` (integer, required): Column number (1-based, in bytes)
 
 **Example:**
-```json
+```jsonc
 {
   "file": "/path/to/project/src/errors/errors.go",
   "line": 30,
