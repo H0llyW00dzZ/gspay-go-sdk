@@ -13,14 +13,14 @@ Ask questions about Go packages, libraries, or programming concepts.
 - `repo_name` (string, optional): Repository name in format `owner/repo` (e.g., `stretchr/testify`)
 
 **Example - General Question:**
-```json
+```jsonc
 {
   "question": "How do I use context.WithTimeout in Go?"
 }
 ```
 
 **Example - Repository-Specific Question:**
-```json
+```jsonc
 {
   "question": "How do I use assert.Equal?",
   "repo_name": "stretchr/testify"
@@ -35,7 +35,7 @@ Get the documentation structure/outline for a repository.
 - `repo_name` (string, required): Repository name in format `owner/repo`
 
 **Example:**
-```json
+```jsonc
 {
   "repo_name": "stretchr/testify"
 }
@@ -50,7 +50,7 @@ Read specific documentation content from a repository's wiki.
 - `path` (string, required): Path to the documentation page
 
 **Example:**
-```json
+```jsonc
 {
   "repo_name": "stretchr/testify",
   "path": "assert"
@@ -69,7 +69,7 @@ This project uses the following dependencies that can be queried:
 
 **Example Queries:**
 
-```json
+```jsonc
 // Learn about testify assertions
 {
   "question": "What assertion methods are available in testify?",
@@ -87,7 +87,7 @@ This project uses the following dependencies that can be queried:
 
 Ask about Go standard library packages without specifying a repo:
 
-```json
+```jsonc
 // HTTP client
 {
   "question": "How do I set timeout on http.Client in Go?"
@@ -111,7 +111,7 @@ Ask about Go standard library packages without specifying a repo:
 
 ### Best Practices Queries
 
-```json
+```jsonc
 // Error handling
 {
   "question": "What are Go best practices for error handling?"
