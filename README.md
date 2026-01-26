@@ -534,10 +534,6 @@ The SDK currently supports **Indonesia (IDR)** payments. Future releases will ad
   - [ ] Support MYR bank transfers and DuitNow
   - [ ] Add MYR payment tests
 
-- [ ] **Singapore (SGD) Payment Support**
-  - [ ] Implement SGD payment service
-  - [ ] Add SGD callback verification
-  - [ ] Support SGD payment methods
 
 ### **Enhancement Backlog**
 - [ ] Add webhook signature verification middleware
