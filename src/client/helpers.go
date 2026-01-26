@@ -21,6 +21,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // GenerateTransactionID generates a unique transaction ID suitable for GSPAY2 API.
@@ -48,6 +50,42 @@ func GenerateTransactionID(prefix string) string {
 	}
 
 	return fmt.Sprintf("%s%s%03d", prefix, timestamp, randomNum.Int64())
+}
+
+// GenerateUUIDTransactionID generates a cryptographically secure UUID v4 transaction ID.
+//
+// This provides stronger uniqueness guarantees than the timestamp-based approach.
+// The UUID is truncated to 20 characters to fit GSPAY2 API limits.
+//
+// Format: PREFIX + UUID (first 17 chars of UUID v4, total max 20 chars)
+//
+// Example:
+//
+//	txnID := client.GenerateUUIDTransactionID("TXN")
+//	// Result: "TXN3d66c16c9db64210a"
+func GenerateUUIDTransactionID(prefix string) string {
+	// Ensure prefix is short enough (max 3 chars)
+	if len(prefix) > 3 {
+		prefix = prefix[:3]
+	}
+
+	// Generate cryptographically secure UUID v4
+	id, err := uuid.NewRandom()
+	if err != nil {
+		// Fallback to timestamp-based ID if UUID generation fails
+		return GenerateTransactionID(prefix)
+	}
+
+	// Convert to string and remove hyphens: "550e8400-e29b-41d4-a716-446655440000"
+	uuidStr := strings.ReplaceAll(id.String(), "-", "")
+
+	// Take first 17 characters to fit within 20-char limit (3 prefix + 17 uuid = 20)
+	// This provides ~2^68 possible combinations (very high uniqueness)
+	if len(uuidStr) > 17 {
+		uuidStr = uuidStr[:17]
+	}
+
+	return fmt.Sprintf("%s%s", prefix, uuidStr)
 }
 
 // BuildReturnURL appends an encoded return URL to a payment URL for 1-way redirect.

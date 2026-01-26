@@ -3,6 +3,7 @@ module github.com/H0llyW00dzZ/gspay-go-sdk
 go 1.25.5
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
 	github.com/valyala/bytebufferpool v1.0.0
 )

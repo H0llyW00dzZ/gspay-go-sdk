@@ -124,6 +124,31 @@ func TestGenerateTransactionID(t *testing.T) {
 	})
 }
 
+func TestGenerateUUIDTransactionID(t *testing.T) {
+	t.Run("generates UUID transaction ID with prefix", func(t *testing.T) {
+		txnID := GenerateUUIDTransactionID("TXN")
+		require.NotEmpty(t, txnID)
+		assert.True(t, len(txnID) <= 20)
+		assert.Contains(t, txnID, "TXN")
+	})
+
+	t.Run("truncates long prefix", func(t *testing.T) {
+		txnID := GenerateUUIDTransactionID("VERYLONGPREFIX")
+		require.NotEmpty(t, txnID)
+		assert.True(t, len(txnID) <= 20)
+		assert.Contains(t, txnID, "VER")
+	})
+
+	t.Run("generates unique IDs", func(t *testing.T) {
+		ids := make(map[string]bool)
+		for range 100 {
+			id := GenerateUUIDTransactionID("TXN")
+			assert.False(t, ids[id], "Generated ID should be unique")
+			ids[id] = true
+		}
+	})
+}
+
 func TestBuildReturnURL(t *testing.T) {
 	t.Run("appends return parameter with ?", func(t *testing.T) {
 		result := BuildReturnURL("https://pay.example.com/payment/123", "https://mysite.com/complete")
