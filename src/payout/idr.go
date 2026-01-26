@@ -181,7 +181,33 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 //
 // Callback Signature formula: MD5(idrpayout_id + account_number + amount + transaction_id + secret_key)
 // Note: Amount in callback has 2 decimal places (e.g., "10000.00").
+//
+// This method only verifies the signature. To also verify the source IP,
+// use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
+	return s.verifyCallbackSignature(callback)
+}
+
+// VerifyCallbackWithIP verifies both the signature and source IP of an IDR payout callback.
+//
+// The sourceIP parameter should be the IP address of the callback request,
+// typically obtained from [http.Request.RemoteAddr] or the X-Forwarded-For header.
+//
+// If the client was configured with [WithCallbackIPWhitelist], this method will
+// verify that the source IP is in the whitelist before verifying the signature.
+// If no whitelist was configured, IP verification is skipped.
+func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string) error {
+	// Verify IP first (fast fail)
+	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		return err
+	}
+
+	// Then verify signature
+	return s.verifyCallbackSignature(callback)
+}
+
+// verifyCallbackSignature performs the actual signature verification.
+func (s *IDRService) verifyCallbackSignature(callback *IDRCallback) error {
 	// Check required fields
 	if callback.IDRPayoutID == "" {
 		return fmt.Errorf("%w: idrpayout_id", errors.ErrMissingCallbackField)

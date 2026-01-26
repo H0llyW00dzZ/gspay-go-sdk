@@ -38,6 +38,10 @@ var (
 	ErrInvalidJSON = errors.New("invalid JSON response")
 	// ErrRequestFailed is returned when the HTTP request fails.
 	ErrRequestFailed = errors.New("request failed")
+	// ErrIPNotWhitelisted is returned when the callback IP is not in the whitelist.
+	ErrIPNotWhitelisted = errors.New("IP address not whitelisted")
+	// ErrInvalidIPAddress is returned when the IP address format is invalid.
+	ErrInvalidIPAddress = errors.New("invalid IP address format")
 )
 
 // APIError represents an error returned by the GSPAY2 API.
