@@ -146,9 +146,7 @@ func New(authKey, secretKey string, opts ...Option) *Client {
 }
 
 // GenerateSignature generates an MD5 signature for API requests.
-func (c *Client) GenerateSignature(data string) string {
-	return signature.Generate(data)
-}
+func (c *Client) GenerateSignature(data string) string { return signature.Generate(data) }
 
 // VerifySignature verifies a callback signature.
 func (c *Client) VerifySignature(expected, actual string) bool {

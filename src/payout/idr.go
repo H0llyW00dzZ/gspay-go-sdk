@@ -94,14 +94,10 @@ type IDRCallback struct {
 }
 
 // IDRService handles IDR payout operations.
-type IDRService struct {
-	client *client.Client
-}
+type IDRService struct{ client *client.Client }
 
 // NewIDRService creates a new IDR payout service.
-func NewIDRService(c *client.Client) *IDRService {
-	return &IDRService{client: c}
-}
+func NewIDRService(c *client.Client) *IDRService { return &IDRService{client: c} }
 
 // Create creates a new IDR payout (withdrawal) to an Indonesian bank account or e-wallet.
 //
