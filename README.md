@@ -423,7 +423,7 @@ if err := paymentSvc.VerifyCallbackWithIP(&callback, clientIP); err != nil {
 
 | Channel | Description |
 |---------|-------------|
-| `constants.ChannelQRIS` | QRIS QR Payment |
+| `constants.ChannelQRIS` | QRIS QR Payment (Big Successor Payment by [Bank Indonesia](https://www.bi.go.id/)) |
 | `constants.ChannelDANA` | DANA E-Wallet |
 | `constants.ChannelBNI` | BNI Virtual Account |
 
