@@ -18,6 +18,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Sentinel errors for common error conditions.
@@ -59,9 +60,21 @@ type APIError struct {
 // Error implements the error interface.
 func (e *APIError) Error() string {
 	if e.Endpoint != "" {
-		return fmt.Sprintf("gspay: API error %d on %s: %s", e.Code, e.Endpoint, e.Message)
+		sanitizedEndpoint := sanitizeEndpoint(e.Endpoint)
+		return fmt.Sprintf("gspay: API error %d on %s: %s", e.Code, sanitizedEndpoint, e.Message)
 	}
 	return fmt.Sprintf("gspay: API error %d: %s", e.Code, e.Message)
+}
+
+// sanitizeEndpoint redacts sensitive information like auth keys from endpoint URLs.
+func sanitizeEndpoint(endpoint string) string {
+	// Redact auth key in operator endpoints: /v2/integrations/operators/{authkey}/...
+	parts := strings.Split(endpoint, "/")
+	if len(parts) >= 5 && parts[1] == "v2" && parts[2] == "integrations" && parts[3] == "operators" && len(parts[4]) > 0 {
+		parts[4] = "[REDACTED]"
+		return strings.Join(parts, "/")
+	}
+	return endpoint
 }
 
 // IsAPIError checks if an error is an APIError.
