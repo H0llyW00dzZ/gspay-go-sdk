@@ -29,8 +29,8 @@ var (
 	ErrInvalidAmount = errors.New("invalid payment amount")
 	// ErrInvalidBankCode is returned when the bank code is not recognized.
 	ErrInvalidBankCode = errors.New("invalid bank code")
-	// ErrInvalidSignature is returned when callback signature verification fails.
-	ErrInvalidSignature = errors.New("invalid callback signature")
+	// ErrInvalidSignature is returned when signature verification fails.
+	ErrInvalidSignature = errors.New("invalid signature")
 	// ErrMissingCallbackField is returned when a required callback field is missing.
 	ErrMissingCallbackField = errors.New("missing required callback field")
 	// ErrEmptyResponse is returned when the API returns an empty response.
