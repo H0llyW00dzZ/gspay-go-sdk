@@ -40,6 +40,16 @@ func TestAPIError_Error(t *testing.T) {
 		expected := "gspay: API error 500 on /api/test: internal server error"
 		assert.Equal(t, expected, err.Error())
 	})
+
+	t.Run("sanitizes auth key in endpoint", func(t *testing.T) {
+		err := &APIError{
+			Code:     401,
+			Message:  "unauthorized",
+			Endpoint: "/v2/integrations/operators/secretkey123/idr/payment",
+		}
+		expected := "gspay: API error 401 on /v2/integrations/operators/[REDACTED]/idr/payment: unauthorized"
+		assert.Equal(t, expected, err.Error())
+	})
 }
 
 func TestIsAPIError(t *testing.T) {
