@@ -180,6 +180,52 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 	return result, nil
 }
 
+// VerifySignature verifies a signature for IDR payment operations.
+//
+// This is a generic method that can be used to verify signatures from any GSPAY2 API response
+// that includes signature verification (status responses, callbacks, etc.).
+//
+// Formula: MD5(id + amount + transaction_id + status + operator_secret_key)
+// Note: Amount should be formatted with 2 decimal places (e.g., "10000.00").
+func (s *IDRService) VerifySignature(id, amount, transactionID string, status constants.PaymentStatus, receivedSignature string) error {
+	// Check required fields
+	if id == "" {
+		return fmt.Errorf("%w: id", errors.ErrMissingCallbackField)
+	}
+	if amount == "" {
+		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
+	}
+	if transactionID == "" {
+		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
+	}
+	if receivedSignature == "" {
+		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
+	}
+
+	// Format amount with 2 decimal places
+	formattedAmount, err := s.formatAmount(amount)
+	if err != nil {
+		return err
+	}
+
+	// Generate expected signature
+	signatureData := fmt.Sprintf("%s%s%s%d%s",
+		id,
+		formattedAmount,
+		transactionID,
+		int(status),
+		s.client.SecretKey,
+	)
+	expectedSignature := signature.Generate(signatureData)
+
+	// Constant-time comparison to prevent timing attacks
+	if !signature.Verify(expectedSignature, receivedSignature) {
+		return errors.ErrInvalidSignature
+	}
+
+	return nil
+}
+
 // VerifyStatusSignature verifies the signature of an IDR payment status response.
 //
 // Status Signature formula: MD5(idrpayment_id + amount + transaction_id + status + operator_secret_key)
@@ -187,43 +233,22 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 //
 // This method verifies the signature included in the status response.
 func (s *IDRService) VerifyStatusSignature(status *IDRStatusResponse) error {
-	// Check required fields
-	if status.IDRPaymentID == "" {
-		return fmt.Errorf("%w: idrpayment_id", errors.ErrMissingCallbackField)
-	}
-	if status.Amount == "" {
-		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
-	}
-	if status.TransactionID == "" {
-		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
-	}
-	if status.Signature == "" {
-		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
-	}
-
-	// Format amount with 2 decimal places
-	amount, err := strconv.ParseFloat(string(status.Amount), 64)
-	if err != nil {
-		return errors.NewValidationError("amount", "invalid amount format")
-	}
-	formattedAmount := fmt.Sprintf("%.2f", amount)
-
-	// Generate expected signature
-	signatureData := fmt.Sprintf("%s%s%s%d%s",
-		status.IDRPaymentID,
-		formattedAmount,
+	return s.VerifySignature(
+		string(status.IDRPaymentID),
+		string(status.Amount),
 		status.TransactionID,
-		int(status.Status),
-		s.client.SecretKey,
+		status.Status,
+		status.Signature,
 	)
-	expectedSignature := signature.Generate(signatureData)
+}
 
-	// Constant-time comparison to prevent timing attacks
-	if !signature.Verify(expectedSignature, status.Signature) {
-		return errors.ErrInvalidSignature
+// formatAmount formats an amount string to exactly 2 decimal places.
+func (s *IDRService) formatAmount(amountStr string) (string, error) {
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil {
+		return "", errors.NewValidationError("amount", "invalid amount format")
 	}
-
-	return nil
+	return fmt.Sprintf("%.2f", amount), nil
 }
 
 // VerifyCallback verifies the signature of an IDR payment callback.
@@ -234,7 +259,13 @@ func (s *IDRService) VerifyStatusSignature(status *IDRStatusResponse) error {
 // This method only verifies the signature. To also verify the source IP,
 // use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
-	return s.verifyCallbackSignature(callback)
+	return s.VerifySignature(
+		callback.IDRPaymentID,
+		callback.Amount,
+		callback.TransactionID,
+		callback.Status,
+		callback.Signature,
+	)
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of an IDR payment callback.
@@ -265,42 +296,13 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 }
 
 // verifyCallbackSignature performs the actual signature verification.
+// Deprecated: Use VerifySignature directly instead.
 func (s *IDRService) verifyCallbackSignature(callback *IDRCallback) error {
-	// Check required fields
-	if callback.IDRPaymentID == "" {
-		return fmt.Errorf("%w: idrpayment_id", errors.ErrMissingCallbackField)
-	}
-	if callback.Amount == "" {
-		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
-	}
-	if callback.TransactionID == "" {
-		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
-	}
-	if callback.Signature == "" {
-		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
-	}
-
-	// Format amount with 2 decimal places
-	amount, err := strconv.ParseFloat(callback.Amount, 64)
-	if err != nil {
-		return errors.NewValidationError("amount", "invalid amount format")
-	}
-	formattedAmount := fmt.Sprintf("%.2f", amount)
-
-	// Generate expected signature
-	signatureData := fmt.Sprintf("%s%s%s%d%s",
+	return s.VerifySignature(
 		callback.IDRPaymentID,
-		formattedAmount,
+		callback.Amount,
 		callback.TransactionID,
 		callback.Status,
-		s.client.SecretKey,
+		callback.Signature,
 	)
-	expectedSignature := signature.Generate(signatureData)
-
-	// Constant-time comparison to prevent timing attacks
-	if !signature.Verify(expectedSignature, callback.Signature) {
-		return errors.ErrInvalidSignature
-	}
-
-	return nil
 }
