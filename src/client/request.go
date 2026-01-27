@@ -39,31 +39,113 @@ type Response struct {
 // IsSuccess checks if the API response indicates success.
 func (r *Response) IsSuccess() bool { return r.Code == 200 }
 
-// DoRequest performs an HTTP request with retry logic.
-func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body any) (*Response, error) {
-	fullURL := c.BaseURL + endpoint
-
-	var reqBody io.Reader
-	var reqBuf gc.Buffer
-	if body != nil {
-		reqBuf = gc.Default.Get()
-		if err := json.NewEncoder(reqBuf).Encode(body); err != nil {
-			reqBuf.Reset()
-			gc.Default.Put(reqBuf)
-			return nil, fmt.Errorf("failed to marshal request body: %w", err)
-		}
-		reqBody = bytes.NewReader(reqBuf.Bytes())
+// prepareRequestBody prepares the request body for HTTP requests.
+func (c *Client) prepareRequestBody(body any) (io.Reader, gc.Buffer, func(), error) {
+	if body == nil {
+		return nil, nil, func() {}, nil
 	}
-	defer func() {
-		if reqBuf != nil {
-			reqBuf.Reset()
-			gc.Default.Put(reqBuf)
-		}
-	}()
 
-	var lastErr error
+	buf := gc.Default.Get()
+	if err := json.NewEncoder(buf).Encode(body); err != nil {
+		buf.Reset()
+		gc.Default.Put(buf)
+		return nil, nil, func() {}, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	reqBody := bytes.NewReader(buf.Bytes())
+	cleanup := func() {
+		buf.Reset()
+		gc.Default.Put(buf)
+	}
+
+	return reqBody, buf, cleanup, nil
+}
+
+// createHTTPRequest creates an HTTP request with appropriate headers.
+func (c *Client) createHTTPRequest(ctx context.Context, method, fullURL string, reqBody io.Reader, hasBody bool) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", constants.UserAgent())
+	if hasBody {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	return req, nil
+}
+
+// processResponse processes the HTTP response and returns parsed data or error.
+func (c *Client) processResponse(resp *http.Response, endpoint string) (*Response, error, bool) {
+	respBuf := gc.Default.Get()
+	_, err := respBuf.ReadFrom(resp.Body)
+	resp.Body.Close()
+
+	if err != nil {
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
+		return nil, fmt.Errorf("failed to read response body: %w", err), true
+	}
+
+	// Handle HTTP errors - retry on server errors (5xx) or 404
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		apiErr := &errors.APIError{
+			Code:        resp.StatusCode,
+			Message:     fmt.Sprintf("HTTP Error: %d", resp.StatusCode),
+			Endpoint:    endpoint,
+			RawResponse: string(respBuf.Bytes()),
+		}
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
+		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
+		return nil, apiErr, retry
+	}
+
+	// Handle empty response
+	if respBuf.Len() == 0 {
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
+		return nil, errors.ErrEmptyResponse, true
+	}
+
+	// Parse response
 	var apiResp Response
-	var success bool
+	if err := json.Unmarshal(respBuf.Bytes(), &apiResp); err != nil {
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
+		return nil, fmt.Errorf("%w: %v", errors.ErrInvalidJSON, err), false
+	}
+
+	// Debug logging
+	if c.Debug {
+		fmt.Printf("DEBUG API Response for %s: %s\n", endpoint, string(respBuf.Bytes()))
+	}
+
+	// Check for API-level errors
+	if !apiResp.IsSuccess() {
+		apiErr := &errors.APIError{
+			Code:        apiResp.Code,
+			Message:     apiResp.Message,
+			Endpoint:    endpoint,
+			RawResponse: string(respBuf.Bytes()),
+		}
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
+		return nil, apiErr, false
+	}
+
+	// Clean up buffer
+	respBuf.Reset()
+	gc.Default.Put(respBuf)
+
+	return &apiResp, nil, false
+}
+
+// executeWithRetry executes the HTTP request with retry logic.
+func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, reqBody io.Reader, reqBuf gc.Buffer, hasBody bool, endpoint string) (*Response, error) {
+	var lastErr error
 	for attempt := 0; attempt <= c.Retries; attempt++ {
 		if attempt > 0 {
 			// Exponential backoff
@@ -75,20 +157,14 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body an
 			}
 
 			// Reset body reader for retry
-			if body != nil {
+			if hasBody {
 				reqBody = bytes.NewReader(reqBuf.Bytes())
 			}
 		}
 
-		req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
+		req, err := c.createHTTPRequest(ctx, method, fullURL, reqBody, hasBody)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create request: %w", err)
-		}
-
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", constants.UserAgent())
-		if body != nil {
-			req.Header.Set("Content-Type", "application/json")
+			return nil, err
 		}
 
 		resp, err := c.HTTPClient.Do(req)
@@ -101,90 +177,36 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body an
 			break
 		}
 
-		respBuf := gc.Default.Get()
-		_, err = respBuf.ReadFrom(resp.Body)
-		resp.Body.Close()
-
+		apiResp, err, retry := c.processResponse(resp, endpoint)
 		if err != nil {
-			respBuf.Reset()
-			gc.Default.Put(respBuf)
-			lastErr = fmt.Errorf("failed to read response body: %w", err)
-			if attempt < c.Retries {
+			lastErr = err
+			if retry && attempt < c.Retries {
 				continue
 			}
 			break
 		}
 
-		// Handle HTTP errors - retry on server errors (5xx) or 404
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			lastErr = &errors.APIError{
-				Code:        resp.StatusCode,
-				Message:     fmt.Sprintf("HTTP Error: %d", resp.StatusCode),
-				Endpoint:    endpoint,
-				RawResponse: string(respBuf.Bytes()),
-			}
-			respBuf.Reset()
-			gc.Default.Put(respBuf)
-			if (resp.StatusCode >= 500 || resp.StatusCode == 404) && attempt < c.Retries {
-				continue
-			}
-			break
-		}
-
-		// Handle empty response
-		if respBuf.Len() == 0 {
-			respBuf.Reset()
-			gc.Default.Put(respBuf)
-			lastErr = errors.ErrEmptyResponse
-			if attempt < c.Retries {
-				continue
-			}
-			break
-		}
-
-		// Parse response
-		if err := json.Unmarshal(respBuf.Bytes(), &apiResp); err != nil {
-			respBuf.Reset()
-			gc.Default.Put(respBuf)
-			lastErr = fmt.Errorf("%w: %v", errors.ErrInvalidJSON, err)
-			break
-		}
-
-		// Debug logging
-		if c.Debug {
-			fmt.Printf("DEBUG API Response for %s: %s\n", endpoint, string(respBuf.Bytes()))
-		}
-
-		// Check for API-level errors
-		if !apiResp.IsSuccess() {
-			lastErr = &errors.APIError{
-				Code:        apiResp.Code,
-				Message:     apiResp.Message,
-				Endpoint:    endpoint,
-				RawResponse: string(respBuf.Bytes()),
-			}
-			respBuf.Reset()
-			gc.Default.Put(respBuf)
-		} else {
-			success = true
-		}
-
-		// Clean up buffer
-		respBuf.Reset()
-		gc.Default.Put(respBuf)
-
-		if success {
-			break
-		}
+		return apiResp, nil
 	}
 
-	if success {
-		return &apiResp, nil
-	}
 	if lastErr != nil {
 		return nil, fmt.Errorf("request failed after %d retries: %w", c.Retries, lastErr)
 	}
 	return nil, fmt.Errorf("request failed after %d retries", c.Retries)
+}
+
+// DoRequest performs an HTTP request with retry logic.
+func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body any) (*Response, error) {
+	fullURL := c.BaseURL + endpoint
+	hasBody := body != nil
+
+	reqBody, reqBuf, cleanup, err := c.prepareRequestBody(body)
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
+	return c.executeWithRetry(ctx, method, fullURL, reqBody, reqBuf, hasBody, endpoint)
 }
 
 // Post performs a POST request.
