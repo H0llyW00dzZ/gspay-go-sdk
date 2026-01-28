@@ -1,6 +1,6 @@
 module github.com/H0llyW00dzZ/gspay-go-sdk
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/google/uuid v1.6.0

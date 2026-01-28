@@ -14,7 +14,7 @@ Thank you for your interest in contributing to the GSPAY Go SDK! This document p
 
 ### Prerequisites
 
-- Go 1.25 or later
+- Go 1.25.6 or later
 - Git
 - Basic understanding of Go modules and testing
 
