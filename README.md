@@ -465,7 +465,7 @@ txnID := client.GenerateTransactionID("TXN")
 
 // Generate cryptographically secure UUID-based transaction ID
 txnID := client.GenerateUUIDTransactionID("TXN")
-// Result: "TXN550e8400-e29b-41"
+// Result: "TXN3d66c16c9db64210a"
 ```
 
 ### Build Return URL
