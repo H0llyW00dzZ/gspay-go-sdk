@@ -305,15 +305,3 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 	// Then verify signature
 	return s.verifyCallbackSignature(callback)
 }
-
-// verifyCallbackSignature performs the actual signature verification.
-// Deprecated: Use VerifySignature directly instead.
-func (s *IDRService) verifyCallbackSignature(callback *IDRCallback) error {
-	return s.VerifySignature(
-		string(callback.IDRPaymentID),
-		string(callback.Amount),
-		callback.TransactionID,
-		callback.Status,
-		callback.Signature,
-	)
-}

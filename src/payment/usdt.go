@@ -17,7 +17,6 @@ package payment
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
@@ -145,45 +144,4 @@ func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP stri
 
 	// Then verify signature
 	return s.verifyCallbackSignature(callback)
-}
-
-// verifyCallbackSignature performs the actual signature verification.
-func (s *USDTService) verifyCallbackSignature(callback *USDTCallback) error {
-	// Check required fields
-	if callback.CryptoPaymentID == "" {
-		return fmt.Errorf("%w: cryptopayment_id", errors.ErrMissingCallbackField)
-	}
-	if callback.Amount == "" {
-		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
-	}
-	if callback.TransactionID == "" {
-		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
-	}
-	if callback.Signature == "" {
-		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
-	}
-
-	// Format amount with 2 decimal places
-	amount, err := strconv.ParseFloat(callback.Amount, 64)
-	if err != nil {
-		return errors.NewValidationError("amount", "invalid amount format")
-	}
-	formattedAmount := fmt.Sprintf("%.2f", amount)
-
-	// Generate expected signature
-	signatureData := fmt.Sprintf("%s%s%s%d%s",
-		callback.CryptoPaymentID,
-		formattedAmount,
-		callback.TransactionID,
-		callback.Status,
-		s.client.SecretKey,
-	)
-	expectedSignature := s.client.GenerateSignature(signatureData)
-
-	// Constant-time comparison to prevent timing attacks
-	if !s.client.VerifySignature(expectedSignature, callback.Signature) {
-		return errors.ErrInvalidSignature
-	}
-
-	return nil
 }
