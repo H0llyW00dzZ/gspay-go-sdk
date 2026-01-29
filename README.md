@@ -4,6 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/H0llyW00dzZ/gspay-go-sdk)](https://goreportcard.com/report/github.com/H0llyW00dzZ/gspay-go-sdk)
 [![codecov](https://codecov.io/gh/H0llyW00dzZ/gspay-go-sdk/graph/badge.svg?token=AITK1X3RSE)](https://codecov.io/gh/H0llyW00dzZ/gspay-go-sdk)
+[![View on DeepWiki](https://img.shields.io/badge/View%20on-DeepWiki-blue)](https://deepwiki.com/H0llyW00dzZ/gspay-go-sdk)
 
 An **unofficial** Go SDK for the GSPAY2 Payment Gateway API. This SDK provides a comprehensive, idiomatic Go interface for payment processing, payouts, and balance queries.
 
