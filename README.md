@@ -382,7 +382,7 @@ if err := paymentSvc.VerifyCallbackWithIP(&callback, clientIP); err != nil {
 
 **Note**: While MD5 provides basic integrity checking, consider implementing additional security layers for high-value transactions or enterprise deployments.
 
-## Supported Banks
+## Supported Banks & E-Wallets
 
 ### Indonesia (IDR)
 
@@ -395,6 +395,11 @@ if err := paymentSvc.VerifyCallbackWithIP(&callback, clientIP); err != nil {
 | `CIMB` | Bank CIMB Niaga |
 | `PERMATA` | Bank Permata |
 | `DANAMON` | Bank Danamon Indonesia |
+
+### E-Wallets (IDR)
+
+| Code | E-Wallet Name |
+|------|---------------|
 | `DANA` | DANA |
 | `OVO` | OVO |
 
