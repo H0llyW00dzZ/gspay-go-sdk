@@ -212,21 +212,23 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 // Formula: MD5(id + account_number + amount + transaction_id + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10000.00").
 func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, receivedSignature string) error {
+	lang := errors.Language(s.client.Language)
+	
 	// Check required fields
 	if id == "" {
-		return fmt.Errorf("%w: id", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "id")
 	}
 	if accountNumber == "" {
-		return fmt.Errorf("%w: account_number", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "account_number")
 	}
 	if amount == "" {
-		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "amount")
 	}
 	if transactionID == "" {
-		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "transaction_id")
 	}
 	if receivedSignature == "" {
-		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "signature")
 	}
 
 	// Format amount with 2 decimal places
@@ -236,6 +238,7 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 	}
 
 	// Generate expected signature
+	// Formula: MD5(id + account_number + amount + transaction_id + operator_secret_key)
 	signatureData := fmt.Sprintf("%s%s%s%s%s",
 		id,
 		accountNumber,
@@ -247,7 +250,7 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
-		return errors.ErrInvalidSignature
+		return errors.NewInvalidSignatureError(lang)
 	}
 
 	return nil

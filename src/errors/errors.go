@@ -24,27 +24,28 @@ import (
 )
 
 // Sentinel errors for common error conditions.
+// These use i18n for their default English messages.
 var (
 	// ErrInvalidTransactionID is returned when the transaction ID is invalid.
-	ErrInvalidTransactionID = errors.New("transaction ID must be 5-20 characters")
+	ErrInvalidTransactionID = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidTransactionID))
 	// ErrInvalidAmount is returned when the payment amount is invalid.
-	ErrInvalidAmount = errors.New("invalid payment amount")
+	ErrInvalidAmount = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidAmount))
 	// ErrInvalidBankCode is returned when the bank code is not recognized.
-	ErrInvalidBankCode = errors.New("invalid bank code")
+	ErrInvalidBankCode = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidBankCode))
 	// ErrInvalidSignature is returned when signature verification fails.
-	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidSignature = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidSignature))
 	// ErrMissingCallbackField is returned when a required callback field is missing.
-	ErrMissingCallbackField = errors.New("missing required callback field")
+	ErrMissingCallbackField = errors.New(i18n.Get(i18n.English, i18n.MsgMissingCallbackField))
 	// ErrEmptyResponse is returned when the API returns an empty response.
-	ErrEmptyResponse = errors.New("empty response from API")
+	ErrEmptyResponse = errors.New(i18n.Get(i18n.English, i18n.MsgEmptyResponse))
 	// ErrInvalidJSON is returned when the API response is not valid JSON.
-	ErrInvalidJSON = errors.New("invalid JSON response")
+	ErrInvalidJSON = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidJSON))
 	// ErrRequestFailed is returned when the HTTP request fails.
-	ErrRequestFailed = errors.New("request failed")
+	ErrRequestFailed = errors.New(i18n.Get(i18n.English, i18n.MsgRequestFailed))
 	// ErrIPNotWhitelisted is returned when the callback IP is not in the whitelist.
-	ErrIPNotWhitelisted = errors.New("IP address not whitelisted")
+	ErrIPNotWhitelisted = errors.New(i18n.Get(i18n.English, i18n.MsgIPNotWhitelisted))
 	// ErrInvalidIPAddress is returned when the IP address format is invalid.
-	ErrInvalidIPAddress = errors.New("invalid IP address format")
+	ErrInvalidIPAddress = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidIPAddress))
 )
 
 // APIError represents an error returned by the GSPAY2 API.
@@ -148,6 +149,29 @@ func NewLocalizedError(lang i18n.Language, key i18n.MessageKey) *LocalizedError 
 	return &LocalizedError{key: key, lang: lang}
 }
 
+// NewLocalizedWrappedError wraps a sentinel error with a localized message.
+// This maintains errors.Is() compatibility while providing localized messages.
+// Example: NewLocalizedWrappedError(ErrMissingCallbackField, lang, KeyMissingCallbackField, "id")
+func NewLocalizedWrappedError(sentinel error, lang i18n.Language, key i18n.MessageKey, fieldName string) error {
+	localizedMsg := i18n.Get(lang, key)
+	if fieldName != "" {
+		return fmt.Errorf("%s: %s: %w", localizedMsg, fieldName, sentinel)
+	}
+	return fmt.Errorf("%s: %w", localizedMsg, sentinel)
+}
+
+// NewMissingFieldError creates a localized error for a missing callback field.
+// Wraps ErrMissingCallbackField while maintaining errors.Is() compatibility.
+func NewMissingFieldError(lang i18n.Language, fieldName string) error {
+	return NewLocalizedWrappedError(ErrMissingCallbackField, lang, MsgMissingCallbackField, fieldName)
+}
+
+// NewInvalidSignatureError creates a localized error for invalid signature.
+// Wraps ErrInvalidSignature while maintaining errors.Is() compatibility.
+func NewInvalidSignatureError(lang i18n.Language) error {
+	return NewLocalizedWrappedError(ErrInvalidSignature, lang, MsgInvalidSignature, "")
+}
+
 // IsLocalizedError checks if an error is a LocalizedError.
 func IsLocalizedError(err error) bool {
 	var locErr *LocalizedError
@@ -170,28 +194,37 @@ func GetMessage(lang i18n.Language, key i18n.MessageKey) string {
 	return i18n.Get(lang, key)
 }
 
-// Re-export i18n types for convenience.
+// Re-export i18n types and constants for convenience
 type (
-	// Language is an alias for i18n.Language.
+	// Language represents a supported language.
 	Language = i18n.Language
-	// MessageKey is an alias for i18n.MessageKey.
+	// MessageKey identifies a translatable message.
 	MessageKey = i18n.MessageKey
 )
 
-// Re-export message key constants for convenience.
+// Re-export language constants
 const (
-	KeyInvalidTransactionID = i18n.MsgInvalidTransactionID
-	KeyInvalidAmount        = i18n.MsgInvalidAmount
-	KeyInvalidBankCode      = i18n.MsgInvalidBankCode
-	KeyInvalidSignature     = i18n.MsgInvalidSignature
-	KeyMissingCallbackField = i18n.MsgMissingCallbackField
-	KeyEmptyResponse        = i18n.MsgEmptyResponse
-	KeyInvalidJSON          = i18n.MsgInvalidJSON
-	KeyRequestFailed        = i18n.MsgRequestFailed
-	KeyIPNotWhitelisted     = i18n.MsgIPNotWhitelisted
-	KeyInvalidIPAddress     = i18n.MsgInvalidIPAddress
-	KeyMinAmountIDR         = i18n.MsgMinAmountIDR
-	KeyMinAmountUSDT        = i18n.MsgMinAmountUSDT
-	KeyMinPayoutAmountIDR   = i18n.MsgMinPayoutAmountIDR
-	KeyInvalidAmountFormat  = i18n.MsgInvalidAmountFormat
+	English    = i18n.English
+	Indonesian = i18n.Indonesian
+)
+
+// Re-export message keys
+const (
+	// Sentinel error message keys
+	MsgInvalidTransactionID = i18n.MsgInvalidTransactionID
+	MsgInvalidAmount        = i18n.MsgInvalidAmount
+	MsgInvalidBankCode      = i18n.MsgInvalidBankCode
+	MsgInvalidSignature     = i18n.MsgInvalidSignature
+	MsgMissingCallbackField = i18n.MsgMissingCallbackField
+	MsgEmptyResponse        = i18n.MsgEmptyResponse
+	MsgInvalidJSON          = i18n.MsgInvalidJSON
+	MsgRequestFailed        = i18n.MsgRequestFailed
+	MsgIPNotWhitelisted     = i18n.MsgIPNotWhitelisted
+	MsgInvalidIPAddress     = i18n.MsgInvalidIPAddress
+
+	// Validation error message keys
+	KeyMinAmountIDR        = i18n.MsgMinAmountIDR
+	KeyMinAmountUSDT       = i18n.MsgMinAmountUSDT
+	KeyMinPayoutAmountIDR  = i18n.MsgMinPayoutAmountIDR
+	KeyInvalidAmountFormat = i18n.MsgInvalidAmountFormat
 )
