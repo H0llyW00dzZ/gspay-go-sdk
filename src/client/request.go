@@ -147,7 +147,9 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 // executeWithRetry executes the HTTP request with retry logic.
 func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, reqBody io.Reader, reqBuf gc.Buffer, hasBody bool, endpoint string) (*Response, error) {
 	var lastErr error
+	var actualAttempts int
 	for attempt := 0; attempt <= c.Retries; attempt++ {
+		actualAttempts = attempt
 		if attempt > 0 {
 			// Exponential backoff
 			waitTime := min(c.RetryWaitMin*time.Duration(1<<(attempt-1)), c.RetryWaitMax)
@@ -191,9 +193,9 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries)+": %w", c.Retries, lastErr)
+		return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
 	}
-	return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries), c.Retries)
+	return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries), actualAttempts)
 }
 
 // DoRequest performs an HTTP request with retry logic.
