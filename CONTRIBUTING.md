@@ -1,5 +1,7 @@
 # Contributing to GSPAY Go SDK
 
+[![Baca dalam Bahasa Indonesia](https://img.shields.io/badge/🇮🇩-Baca%20dalam%20Bahasa%20Indonesia-red)](CONTRIBUTING.id.md)
+
 Thank you for your interest in contributing to the GSPAY Go SDK! This document provides guidelines and information for contributors.
 
 ## 🚀 Ways to Contribute
