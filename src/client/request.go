@@ -27,6 +27,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/gc"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
 // Response represents a generic API response structure.
@@ -49,7 +50,7 @@ func (c *Client) prepareRequestBody(body any) (io.Reader, gc.Buffer, func(), err
 	if err := json.NewEncoder(buf).Encode(body); err != nil {
 		buf.Reset()
 		gc.Default.Put(buf)
-		return nil, nil, func() {}, fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, nil, func() {}, fmt.Errorf("%s: %w", i18n.Get(c.Language, i18n.MsgInvalidJSON), err)
 	}
 
 	reqBody := bytes.NewReader(buf.Bytes())
@@ -65,7 +66,7 @@ func (c *Client) prepareRequestBody(body any) (io.Reader, gc.Buffer, func(), err
 func (c *Client) createHTTPRequest(ctx context.Context, method, fullURL string, reqBody io.Reader, hasBody bool) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("%s: %w", i18n.Get(c.Language, i18n.MsgRequestFailed), err)
 	}
 
 	req.Header.Set("Accept", "application/json")
@@ -86,7 +87,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	if err != nil {
 		respBuf.Reset()
 		gc.Default.Put(respBuf)
-		return nil, true, fmt.Errorf("failed to read response body: %w", err)
+		return nil, true, fmt.Errorf("%s: %w", i18n.Get(c.Language, i18n.MsgRequestFailed), err)
 	}
 
 	// Handle HTTP errors - retry on server errors (5xx) or 404
@@ -190,9 +191,9 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf("request failed after %d retries: %w", c.Retries, lastErr)
+		return nil, fmt.Errorf("%s after %d retries: %w", i18n.Get(c.Language, i18n.MsgRequestFailed), c.Retries, lastErr)
 	}
-	return nil, fmt.Errorf("request failed after %d retries", c.Retries)
+	return nil, fmt.Errorf("%s after %d retries", i18n.Get(c.Language, i18n.MsgRequestFailed), c.Retries)
 }
 
 // DoRequest performs an HTTP request with retry logic.
@@ -228,7 +229,7 @@ func (c *Client) Get(ctx context.Context, endpoint string, params map[string]str
 
 // ParseData parses the data field from an API response.
 // GSPAY2 API returns data as a JSON string that needs to be decoded.
-func ParseData[T any](data json.RawMessage) (*T, error) {
+func ParseData[T any](data json.RawMessage, lang i18n.Language) (*T, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -259,7 +260,7 @@ func ParseData[T any](data json.RawMessage) (*T, error) {
 	// Try to unmarshal as single object
 	var result T
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse data field: %w", err)
+		return nil, fmt.Errorf("%s: %w", i18n.Get(lang, i18n.MsgInvalidJSON), err)
 	}
 
 	return &result, nil

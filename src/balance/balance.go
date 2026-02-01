@@ -44,7 +44,7 @@ func (s *Service) Get(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	result, err := client.ParseData[Response](resp.Data)
+	result, err := client.ParseData[Response](resp.Data, s.client.Language)
 	if err != nil {
 		return "", err
 	}
