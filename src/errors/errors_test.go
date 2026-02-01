@@ -51,6 +51,46 @@ func TestAPIError_Error(t *testing.T) {
 		expected := "gspay: API error 401 on /v2/integrations/operators/[REDACTED]/idr/payment: unauthorized"
 		assert.Equal(t, expected, err.Error())
 	})
+
+	t.Run("sanitizes auth key in payout endpoint", func(t *testing.T) {
+		err := &APIError{
+			Code:     400,
+			Message:  "insufficient balance",
+			Endpoint: "/v2/integrations/operators/98f3ca376dc94481b0f0fc38825f76e4/idr/payout",
+		}
+		expected := "gspay: API error 400 on /v2/integrations/operators/[REDACTED]/idr/payout: insufficient balance"
+		assert.Equal(t, expected, err.Error())
+	})
+
+	t.Run("sanitizes auth key in payout status endpoint", func(t *testing.T) {
+		err := &APIError{
+			Code:     404,
+			Message:  "payout not found",
+			Endpoint: "/v2/integrations/operators/98f3ca376dc94481b0f0fc38825f76e4/idr/payout/status",
+		}
+		expected := "gspay: API error 404 on /v2/integrations/operators/[REDACTED]/idr/payout/status: payout not found"
+		assert.Equal(t, expected, err.Error())
+	})
+
+	t.Run("sanitizes auth key in balance endpoint (singular)", func(t *testing.T) {
+		err := &APIError{
+			Code:     400,
+			Message:  "IP Network Unauthorized",
+			Endpoint: "/v2/integrations/operator/98f3ca376dc94481b0f0fc38825f76e4/get/balance",
+		}
+		expected := "gspay: API error 400 on /v2/integrations/operator/[REDACTED]/get/balance: IP Network Unauthorized"
+		assert.Equal(t, expected, err.Error())
+	})
+
+	t.Run("sanitizes auth key in USDT endpoint", func(t *testing.T) {
+		err := &APIError{
+			Code:     400,
+			Message:  "IP Network Unauthorized",
+			Endpoint: "/v2/integrations/operators/98f3ca376dc94481b0f0fc38825f76e4/cryptocurrency/trc20/usdt",
+		}
+		expected := "gspay: API error 400 on /v2/integrations/operators/[REDACTED]/cryptocurrency/trc20/usdt: IP Network Unauthorized"
+		assert.Equal(t, expected, err.Error())
+	})
 }
 
 func TestIsAPIError(t *testing.T) {
