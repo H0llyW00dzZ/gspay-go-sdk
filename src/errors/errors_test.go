@@ -149,17 +149,17 @@ func TestSentinelErrors(t *testing.T) {
 
 func TestLocalizedError_Error(t *testing.T) {
 	t.Run("returns English message", func(t *testing.T) {
-		err := NewLocalizedError(i18n.English, KeyInvalidTransactionID)
+		err := NewLocalizedError(i18n.English, MsgInvalidTransactionID)
 		assert.Equal(t, "transaction ID must be 5-20 characters", err.Error())
 	})
 
 	t.Run("returns Indonesian message", func(t *testing.T) {
-		err := NewLocalizedError(i18n.Indonesian, KeyInvalidTransactionID)
+		err := NewLocalizedError(i18n.Indonesian, MsgInvalidTransactionID)
 		assert.Equal(t, "ID transaksi harus 5-20 karakter", err.Error())
 	})
 
 	t.Run("falls back to English for unknown language", func(t *testing.T) {
-		err := NewLocalizedError(i18n.Language("fr"), KeyInvalidAmount)
+		err := NewLocalizedError(i18n.Language("fr"), MsgInvalidAmount)
 		assert.Equal(t, "invalid payment amount", err.Error())
 	})
 }
@@ -170,15 +170,15 @@ func TestLocalizedError_Key(t *testing.T) {
 }
 
 func TestNewLocalizedError(t *testing.T) {
-	err := NewLocalizedError(i18n.Indonesian, KeyInvalidSignature)
+	err := NewLocalizedError(i18n.Indonesian, MsgInvalidSignature)
 	assert.NotNil(t, err)
-	assert.Equal(t, KeyInvalidSignature, err.Key())
+	assert.Equal(t, MsgInvalidSignature, err.Key())
 	assert.Equal(t, "tanda tangan tidak valid", err.Error())
 }
 
 func TestIsLocalizedError(t *testing.T) {
 	t.Run("returns true for LocalizedError", func(t *testing.T) {
-		err := NewLocalizedError(i18n.English, KeyRequestFailed)
+		err := NewLocalizedError(i18n.English, MsgRequestFailed)
 		assert.True(t, IsLocalizedError(err))
 	})
 
@@ -194,7 +194,7 @@ func TestIsLocalizedError(t *testing.T) {
 
 func TestGetLocalizedError(t *testing.T) {
 	t.Run("extracts LocalizedError", func(t *testing.T) {
-		original := NewLocalizedError(i18n.Indonesian, KeyEmptyResponse)
+		original := NewLocalizedError(i18n.Indonesian, MsgEmptyResponse)
 		extracted := GetLocalizedError(original)
 		assert.Equal(t, original, extracted)
 	})
@@ -217,7 +217,7 @@ func TestGetMessage(t *testing.T) {
 	})
 
 	t.Run("falls back to English for unknown language", func(t *testing.T) {
-		msg := GetMessage(i18n.Language("de"), KeyInvalidJSON)
+		msg := GetMessage(i18n.Language("de"), MsgInvalidJSON)
 		assert.Equal(t, "invalid JSON response", msg)
 	})
 }
@@ -228,16 +228,16 @@ func TestLocalizedErrorMessageKeys(t *testing.T) {
 		key      MessageKey
 		expected string
 	}{
-		{KeyInvalidTransactionID, "transaction ID must be 5-20 characters"},
-		{KeyInvalidAmount, "invalid payment amount"},
-		{KeyInvalidBankCode, "invalid bank code"},
-		{KeyInvalidSignature, "invalid signature"},
-		{KeyMissingCallbackField, "missing required callback field"},
-		{KeyEmptyResponse, "empty response from API"},
-		{KeyInvalidJSON, "invalid JSON response"},
-		{KeyRequestFailed, "request failed"},
-		{KeyIPNotWhitelisted, "IP address not whitelisted"},
-		{KeyInvalidIPAddress, "invalid IP address format"},
+		{MsgInvalidTransactionID, "transaction ID must be 5-20 characters"},
+		{MsgInvalidAmount, "invalid payment amount"},
+		{MsgInvalidBankCode, "invalid bank code"},
+		{MsgInvalidSignature, "invalid signature"},
+		{MsgMissingCallbackField, "missing required callback field"},
+		{MsgEmptyResponse, "empty response from API"},
+		{MsgInvalidJSON, "invalid JSON response"},
+		{MsgRequestFailed, "request failed"},
+		{MsgIPNotWhitelisted, "IP address not whitelisted"},
+		{MsgInvalidIPAddress, "invalid IP address format"},
 		{KeyMinAmountIDR, "minimum amount is 10000 IDR"},
 		{KeyMinAmountUSDT, "minimum amount is 1.00 USDT"},
 		{KeyMinPayoutAmountIDR, "minimum payout amount is 10000 IDR"},

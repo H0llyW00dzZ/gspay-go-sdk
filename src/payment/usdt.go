@@ -17,6 +17,7 @@ package payment
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
@@ -118,6 +119,55 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 	return result, nil
 }
 
+// VerifySignature verifies the signature of a USDT payment response.
+//
+// This is a generic method that can be used to verify signatures from any GSPAY2 API response
+// that includes signature verification (status responses, callbacks, etc.).
+//
+// Formula: MD5(cryptopayment_id + amount + transaction_id + status + operator_secret_key)
+// Note: Amount should be formatted with 2 decimal places (e.g., "10.50").
+func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID string, status constants.PaymentStatus, receivedSignature string) error {
+	lang := errors.Language(s.client.Language)
+	
+	// Check required fields
+	if cryptoPaymentID == "" {
+		return errors.NewMissingFieldError(lang, "cryptopayment_id")
+	}
+	if amount == "" {
+		return errors.NewMissingFieldError(lang, "amount")
+	}
+	if transactionID == "" {
+		return errors.NewMissingFieldError(lang, "transaction_id")
+	}
+	if receivedSignature == "" {
+		return errors.NewMissingFieldError(lang, "signature")
+	}
+
+	// Format amount with 2 decimal places
+	amountFloat, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return errors.NewValidationError("amount", errors.GetMessage(lang, errors.KeyInvalidAmountFormat))
+	}
+	formattedAmount := fmt.Sprintf("%.2f", amountFloat)
+
+	// Generate expected signature
+	signatureData := fmt.Sprintf("%s%s%s%d%s",
+		cryptoPaymentID,
+		formattedAmount,
+		transactionID,
+		status,
+		s.client.SecretKey,
+	)
+	expectedSignature := s.client.GenerateSignature(signatureData)
+
+	// Constant-time comparison to prevent timing attacks
+	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
+		return errors.NewInvalidSignatureError(lang)
+	}
+
+	return nil
+}
+
 // VerifyCallback verifies the signature of a USDT payment callback.
 //
 // Callback Signature formula: MD5(cryptopayment_id + amount + transaction_id + status + secret_key)
@@ -125,7 +175,13 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 // This method only verifies the signature. To also verify the source IP,
 // use [USDTService.VerifyCallbackWithIP] instead.
 func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
-	return s.verifyCallbackSignature(callback)
+	return s.VerifySignature(
+		callback.CryptoPaymentID,
+		callback.Amount,
+		callback.TransactionID,
+		callback.Status,
+		callback.Signature,
+	)
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of a USDT payment callback.
@@ -143,5 +199,5 @@ func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP stri
 	}
 
 	// Then verify signature
-	return s.verifyCallbackSignature(callback)
+	return s.VerifyCallback(callback)
 }

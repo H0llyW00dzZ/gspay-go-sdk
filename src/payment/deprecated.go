@@ -25,24 +25,26 @@ import (
 //
 // Deprecated: Use VerifySignature directly instead.
 func (s *USDTService) verifyCallbackSignature(callback *USDTCallback) error {
+	lang := errors.Language(s.client.Language)
+	
 	// Check required fields
 	if callback.CryptoPaymentID == "" {
-		return fmt.Errorf("%w: cryptopayment_id", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "cryptopayment_id")
 	}
 	if callback.Amount == "" {
-		return fmt.Errorf("%w: amount", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "amount")
 	}
 	if callback.TransactionID == "" {
-		return fmt.Errorf("%w: transaction_id", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "transaction_id")
 	}
 	if callback.Signature == "" {
-		return fmt.Errorf("%w: signature", errors.ErrMissingCallbackField)
+		return errors.NewMissingFieldError(lang, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	amount, err := strconv.ParseFloat(callback.Amount, 64)
 	if err != nil {
-		return errors.NewValidationError("amount", "invalid amount format")
+		return errors.NewValidationError("amount", errors.GetMessage(lang, errors.KeyInvalidAmountFormat))
 	}
 	formattedAmount := fmt.Sprintf("%.2f", amount)
 
@@ -58,7 +60,7 @@ func (s *USDTService) verifyCallbackSignature(callback *USDTCallback) error {
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, callback.Signature) {
-		return errors.ErrInvalidSignature
+		return errors.NewInvalidSignatureError(lang)
 	}
 
 	return nil
