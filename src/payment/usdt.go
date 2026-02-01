@@ -111,7 +111,7 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 		return nil, err
 	}
 
-	result, err := client.ParseData[USDTResponse](resp.Data)
+	result, err := client.ParseData[USDTResponse](resp.Data, s.client.Language)
 	if err != nil {
 		return nil, err
 	}

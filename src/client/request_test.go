@@ -24,6 +24,7 @@ import (
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -250,7 +251,7 @@ func TestParseData(t *testing.T) {
 			PaymentURL string `json:"payment_url"`
 		}
 
-		result, err := ParseData[testStruct](data)
+		result, err := ParseData[testStruct](data, i18n.English)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, "https://pay.example.com", result.PaymentURL)
@@ -263,7 +264,7 @@ func TestParseData(t *testing.T) {
 			PaymentURL string `json:"payment_url"`
 		}
 
-		result, err := ParseData[testStruct](data)
+		result, err := ParseData[testStruct](data, i18n.English)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, "https://pay.example.com", result.PaymentURL)
@@ -276,7 +277,7 @@ func TestParseData(t *testing.T) {
 			PaymentURL string `json:"payment_url"`
 		}
 
-		result, err := ParseData[testStruct](data)
+		result, err := ParseData[testStruct](data, i18n.English)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		assert.Equal(t, "https://pay.example.com", result.PaymentURL)
@@ -284,7 +285,7 @@ func TestParseData(t *testing.T) {
 
 	t.Run("handles empty data", func(t *testing.T) {
 		type testStruct struct{}
-		result, err := ParseData[testStruct](nil)
+		result, err := ParseData[testStruct](nil, i18n.English)
 		require.NoError(t, err)
 		assert.Nil(t, result)
 	})

@@ -178,7 +178,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		return nil, err
 	}
 
-	result, err := client.ParseData[IDRResponse](resp.Data)
+	result, err := client.ParseData[IDRResponse](resp.Data, s.client.Language)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 		return nil, err
 	}
 
-	result, err := client.ParseData[IDRStatusResponse](resp.Data)
+	result, err := client.ParseData[IDRStatusResponse](resp.Data, s.client.Language)
 	if err != nil {
 		return nil, err
 	}
