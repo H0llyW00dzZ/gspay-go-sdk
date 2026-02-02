@@ -576,6 +576,7 @@ The SDK currently supports **Indonesia (IDR)** payments. Future releases will ad
 - [ ] Implement payment reconciliation utilities
 - [ ] Add support for partial refunds (if supported by API)
 - [ ] Multi-currency balance queries
+- [ ] Implement QR Code mechanism for rendering/saving as image (e.g., .png)
 
 ### **Contributing**
 Contributions for expanding payment method support are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for details.
