@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package i18n provides internationalization support for the GSPAY2 SDK.
 package i18n
 
 // Language represents a supported language for SDK messages.

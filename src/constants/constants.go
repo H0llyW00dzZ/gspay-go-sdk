@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package constants provides constant values for the GSPAY2 API.
 package constants
 
 // DefaultBaseURL is the default GSPAY2 API base URL.

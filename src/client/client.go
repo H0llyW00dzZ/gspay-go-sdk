@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package client provides the HTTP client for the GSPAY2 API.
 package client
 
 import (

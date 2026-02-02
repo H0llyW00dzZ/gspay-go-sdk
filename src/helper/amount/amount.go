@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package amount provides utility functions for formatting monetary amounts.
-//
-// This package is used for callback signature verification where amounts are
-// formatted with 2 decimal places (e.g., "10000.00").
 package amount
 
 import (

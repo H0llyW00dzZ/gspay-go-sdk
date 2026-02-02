@@ -12,22 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signature
-
-import (
-	"crypto/md5"
-	"crypto/subtle"
-	"encoding/hex"
-)
-
-// Generate creates an MD5 signature (lowercase hex string).
-func Generate(data string) string {
-	hash := md5.Sum([]byte(data))
-	return hex.EncodeToString(hash[:])
-}
-
-// Verify checks if the provided signature matches the expected signature.
-// Uses constant-time comparison to prevent timing attacks.
-func Verify(expected, actual string) bool {
-	return subtle.ConstantTimeCompare([]byte(expected), []byte(actual)) == 1
-}
+// Package errors provides error types for the GSPAY2 SDK.
+package errors
