@@ -575,6 +575,7 @@ SDK saat ini mendukung pembayaran **Indonesia (IDR)**. Rilis mendatang akan mena
 - [ ] Implementasi utilitas rekonsiliasi pembayaran
 - [ ] Tambahkan dukungan untuk refund parsial (jika didukung oleh API)
 - [ ] Query saldo multi-mata uang
+- [ ] Implementasi mekanisme rendering/penyimpanan QR Code (misal: .png)
 
 ### **Kontribusi**
 Kontribusi untuk memperluas dukungan metode pembayaran sangat diterima! Silakan lihat [Panduan Kontribusi](CONTRIBUTING.md) untuk detailnya.
