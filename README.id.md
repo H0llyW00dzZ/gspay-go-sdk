@@ -110,6 +110,106 @@ c := client.New(
 | `WithRetryWait` | Mengatur waktu tunggu min/maks antar retry | `500ms` / `2s` |
 | `WithHTTPClient` | Menggunakan HTTP client kustom | Default `http.Client` |
 | `WithLanguage` | Mengatur bahasa pesan error | `i18n.English` |
+| `WithDebug` | Mengaktifkan logging debug ke stderr | `false` |
+| `WithLogger` | Mengatur structured logger kustom | `logger.Nop` (tanpa logging) |
+
+## Logging
+
+SDK menyediakan structured logging dengan level log yang dapat dikonfigurasi. Secara default, logging dinonaktifkan (no-op).
+
+### Mode Debug Cepat
+
+Aktifkan logging debug ke stderr untuk development:
+
+```go
+c := client.New("auth-key", "secret-key",
+    client.WithDebug(true),
+)
+```
+
+### Level Log Kustom
+
+Gunakan logger bawaan `Std` dengan level log tertentu:
+
+```go
+import (
+    "os"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+)
+
+// Log INFO ke atas (INFO, WARN, ERROR)
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(os.Stdout, logger.LevelInfo)),
+)
+
+// Log hanya WARN dan ERROR
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(os.Stdout, logger.LevelWarn)),
+)
+```
+
+### Level Log
+
+| Level | Deskripsi |
+|-------|-----------|
+| `logger.LevelDebug` | Informasi debugging detail |
+| `logger.LevelInfo` | Pesan operasional umum |
+| `logger.LevelWarn` | Kondisi peringatan |
+| `logger.LevelError` | Kondisi error |
+
+### Logging ke File
+
+Tulis log ke file:
+
+```go
+logFile, err := os.OpenFile("sdk.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+if err != nil {
+    log.Fatal(err)
+}
+defer logFile.Close()
+
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(logFile, logger.LevelInfo)),
+)
+```
+
+### Integrasi Logger Kustom
+
+Implementasikan interface `logger.Handler` untuk integrasi dengan framework logging Anda (misal: `slog`, `zap`, `zerolog`):
+
+```go
+import (
+    "log/slog"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+)
+
+type SlogAdapter struct {
+    logger *slog.Logger
+}
+
+func (a *SlogAdapter) Log(level logger.Level, msg string, args ...any) {
+    switch level {
+    case logger.LevelDebug:
+        a.logger.Debug(msg, args...)
+    case logger.LevelInfo:
+        a.logger.Info(msg, args...)
+    case logger.LevelWarn:
+        a.logger.Warn(msg, args...)
+    case logger.LevelError:
+        a.logger.Error(msg, args...)
+    }
+}
+
+// Gunakan dengan client
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(&SlogAdapter{logger: slog.Default()}),
+)
+```
+
+### Catatan Keamanan
+
+Saat menggunakan `WithLogger()`, URL endpoint yang mengandung auth key secara otomatis disanitasi (diredaksi sebagai `[REDACTED]`). Saat menggunakan `WithDebug(true)`, endpoint mentah ditampilkan untuk keperluan debugging.
 
 ## Dukungan Bahasa (i18n)
 
@@ -573,7 +673,7 @@ SDK saat ini mendukung pembayaran **Indonesia (IDR)**. Rilis mendatang akan mena
 - [ ] Implementasi polling status pembayaran dengan webhook
 - [ ] Tambahkan rate limiting dan request throttling
 - [ ] Dukungan untuk HTTP client kustom dan proxy
-- [ ] Tambahkan logging dan metrik yang komprehensif
+- [x] Tambahkan logging dan metrik yang komprehensif
 - [ ] Implementasi utilitas rekonsiliasi pembayaran
 - [ ] Tambahkan dukungan untuk refund parsial (jika didukung oleh API)
 - [ ] Query saldo multi-mata uang

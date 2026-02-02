@@ -31,3 +31,6 @@ tmp/
 # Project build
 bin
 changelog.md
+
+# Example log files
+logging.example

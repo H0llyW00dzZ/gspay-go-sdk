@@ -29,6 +29,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/gc"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
 )
 
 // Response represents a generic API response structure.
@@ -100,12 +101,22 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 			RawResponse: string(respBuf.Bytes()),
 			Lang:        c.Language,
 		}
-		respBuf.Reset()
-		gc.Default.Put(respBuf)
 		// Retry on 5xx server errors and 404s.
 		// Note: 404 is included because the GSPAY API may transiently return 404
 		// during service deployments or load balancer routing changes.
 		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
+
+		// Log error (only when using custom logger, not debug mode)
+		if !c.Debug {
+			c.logger.Error("HTTP error response",
+				"endpoint", sanitize.Endpoint(endpoint),
+				"statusCode", resp.StatusCode,
+				"retryable", retry,
+			)
+		}
+
+		respBuf.Reset()
+		gc.Default.Put(respBuf)
 		return nil, retry, apiErr
 	}
 
@@ -125,9 +136,11 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	}
 
 	// Debug logging
-	if c.Debug {
-		fmt.Printf("DEBUG API Response for %s: %s\n", endpoint, string(respBuf.Bytes()))
-	}
+	c.logger.Debug("API response received",
+		"endpoint", endpoint,
+		"status", resp.StatusCode,
+		"body", string(respBuf.Bytes()),
+	)
 
 	// Check for API-level errors
 	if !apiResp.IsSuccess() {
@@ -157,6 +170,15 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 	for attempt := 0; attempt <= c.Retries; attempt++ {
 		actualAttempts = attempt
 		if attempt > 0 {
+			// Log retry attempt (only when using custom logger, not debug mode)
+			if !c.Debug {
+				c.logger.Warn("retrying request",
+					"endpoint", sanitize.Endpoint(endpoint),
+					"attempt", attempt,
+					"maxRetries", c.Retries,
+				)
+			}
+
 			// Wait with exponential backoff and jitter
 			if err := c.waitBackoff(ctx, attempt); err != nil {
 				return nil, err
@@ -173,9 +195,24 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 			return nil, err
 		}
 
+		// Log outgoing request
+		c.logger.Debug("sending request",
+			"method", method,
+			"endpoint", endpoint,
+			"attempt", attempt,
+		)
+
 		resp, err := c.HTTPClient.Do(req)
 		if err != nil {
 			lastErr = errors.New(c.Language, errors.ErrRequestFailed, err)
+			// Log error (only when using custom logger, not debug mode)
+			if !c.Debug {
+				c.logger.Error("request failed",
+					"endpoint", sanitize.Endpoint(endpoint),
+					"attempt", attempt,
+					"error", err.Error(),
+				)
+			}
 			// Retry on transient network errors
 			if attempt < c.Retries {
 				continue
@@ -187,11 +224,26 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		if err != nil {
 			lastErr = err
 			if retry && attempt < c.Retries {
+				// Log retryable error (only when using custom logger, not debug mode)
+				if !c.Debug {
+					c.logger.Warn("retryable error occurred",
+						"endpoint", sanitize.Endpoint(endpoint),
+						"attempt", attempt,
+						"error", err.Error(),
+					)
+				}
 				continue
 			}
 			break
 		}
 
+		// Log success (only when using custom logger, not debug mode)
+		if !c.Debug {
+			c.logger.Info("request completed successfully",
+				"endpoint", sanitize.Endpoint(endpoint),
+				"attempts", attempt+1,
+			)
+		}
 		return apiResp, nil
 	}
 

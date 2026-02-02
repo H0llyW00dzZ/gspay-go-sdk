@@ -46,6 +46,7 @@ Understand the layout before adding new files.
 src/
 ├── balance/     # Balance query service
 ├── client/      # HTTP client, request handling, retry logic (with jitter)
+│   └── logger/  # Structured logging (Handler interface, Std, Nop implementations)
 ├── constants/   # Enums (Banks, Channels, Status) and config constants
 ├── errors/      # Sentinel errors, APIError, ValidationError, LocalizedError
 ├── helper/      # Shared utility packages
@@ -53,6 +54,7 @@ src/
 │   └── gc/      # Garbage collection utilities (bytebufferpool wrapper)
 ├── i18n/        # Internationalization (Language, MessageKey, translations)
 ├── internal/    # Internal packages not exposed to users
+│   ├── sanitize/  # Endpoint URL sanitization (redacts auth keys)
 │   └── signature/ # MD5 signature generation and verification
 ├── payment/     # Payment services (IDR, USDT)
 └── payout/      # Payout/Withdrawal services (IDR)
@@ -191,3 +193,48 @@ func TestService_Method(t *testing.T) {
 | Callbacks | `... + status + secret_key` (Verify specific order in code) |
 
 **Note**: Amounts in signatures must be formatted to 2 decimal places (e.g., "10000.00").
+
+## 8. Logging Guidelines
+
+### Using the Logger Package
+
+The SDK provides structured logging via `src/client/logger`. Use it for request lifecycle events.
+
+```go
+import "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+
+// Log levels (in order of severity)
+logger.LevelDebug  // Detailed debugging info
+logger.LevelInfo   // General operational messages
+logger.LevelWarn   // Warning conditions
+logger.LevelError  // Error conditions
+
+// Built-in implementations
+logger.Nop         // No-op logger (default, discards all logs)
+logger.NewStd(w, level)  // Standard library logger with level filtering
+```
+
+### Implementing Custom Loggers
+
+Implement the `logger.Handler` interface:
+
+```go
+type Handler interface {
+    Log(level Level, msg string, args ...any)
+}
+```
+
+### Endpoint Sanitization
+
+**ALWAYS** use `src/internal/sanitize` when logging endpoints in production code:
+
+```go
+import "github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
+
+// Sanitize endpoint URLs to redact auth keys
+safeEndpoint := sanitize.Endpoint(endpoint)
+// Input:  "/v2/integrations/operators/secret123/idr/payment"
+// Output: "/v2/integrations/operators/[REDACTED]/idr/payment"
+```
+
+**Exception**: `WithDebug(true)` mode shows raw endpoints for debugging purposes.

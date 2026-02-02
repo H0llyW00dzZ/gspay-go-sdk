@@ -49,13 +49,14 @@ gspay-go-sdk/
 ├── src/
 │   ├── balance/     # Layanan query saldo
 │   ├── client/      # HTTP client dan fungsionalitas inti
+│   │   └── logger/  # Structured logging (interface Handler, Std, Nop)
 │   ├── constants/   # Kode bank, status pembayaran, channel
 │   ├── errors/      # Tipe error dan penanganan
 │   ├── helper/      # Utilitas helper
 │   │   ├── amount/  # Utilitas pemformatan jumlah
 │   │   └── gc/      # Manajemen buffer pool
 │   ├── i18n/        # Internasionalisasi (bahasa, terjemahan)
-│   ├── internal/    # Utilitas internal (pembuatan tanda tangan)
+│   ├── internal/    # Utilitas internal (tanda tangan, sanitasi)
 │   ├── payment/     # Layanan pembayaran (IDR, THB/MYR mendatang)
 │   └── payout/      # Layanan pencairan (IDR)
 ├── examples/        # Contoh penggunaan
@@ -135,6 +136,38 @@ Saat menambahkan pesan error yang menghadap pengguna:
    // src/errors/errors.go
    const KeyNewError = i18n.MsgNewErrorKey
    ```
+
+### Logging
+
+Saat menambahkan logging ke komponen SDK:
+
+1. **Gunakan paket logger** di `src/client/logger`:
+   ```go
+   import "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+   
+   // Level log
+   logger.LevelDebug  // Debugging detail
+   logger.LevelInfo   // Pesan operasional umum
+   logger.LevelWarn   // Kondisi peringatan
+   logger.LevelError  // Kondisi error
+   ```
+
+2. **Implementasikan interface Handler** untuk logger kustom:
+   ```go
+   type Handler interface {
+       Log(level Level, msg string, args ...any)
+   }
+   ```
+
+3. **Sanitasi endpoint** saat logging URL yang mengandung auth key:
+   ```go
+   import "github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
+   
+   safeEndpoint := sanitize.Endpoint(endpoint)
+   // Meredaksi auth key sebagai [REDACTED]
+   ```
+
+4. **Pengecualian**: Mode `WithDebug(true)` menampilkan endpoint mentah untuk debugging
 
 ### Memodifikasi Endpoint API
 
