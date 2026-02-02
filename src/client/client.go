@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
@@ -50,12 +51,16 @@ type Client struct {
 	// parsedIPNets contains parsed CIDR networks for efficient IP checking.
 	parsedIPNets []*net.IPNet
 	// Debug enables debug logging of API requests and responses.
+	// When true and no custom logger is set, uses the default logger.
 	Debug bool
 	// parsedIPs contains parsed individual IP addresses.
 	parsedIPs []net.IP
 	// Language is the language for SDK error messages.
 	// Default is English.
 	Language i18n.Language
+	// logger is the structured logger for the client.
+	// Default is logger.Nop (no logging).
+	logger logger.Handler
 }
 
 // Option is a functional option for configuring the Client.
@@ -94,9 +99,21 @@ func WithRetries(retries int) Option {
 }
 
 // WithDebug enables debug logging of API requests and responses.
+// When enabled, automatically uses the default logger if no custom logger is set.
+//
+// Example:
+//
+//	// Enable debug logging (uses default stderr logger)
+//	c := client.New("auth", "secret", client.WithDebug(true))
 func WithDebug(debug bool) Option {
 	return func(c *Client) {
 		c.Debug = debug
+		if debug {
+			// Use default logger if none is set
+			if _, isNop := c.logger.(logger.Nop); isNop {
+				c.logger = logger.Default()
+			}
+		}
 	}
 }
 
@@ -141,6 +158,32 @@ func WithLanguage(lang i18n.Language) Option {
 	}
 }
 
+// WithLogger sets a custom logger for the client.
+//
+// If l is nil, a [logger.Nop] is used (no logging).
+// For debug logging, use [logger.Default] or [logger.NewStd].
+//
+// Example:
+//
+//	// Enable debug logging to stderr
+//	c := client.New("auth", "secret", client.WithLogger(logger.Default()))
+//
+//	// Custom log level
+//	l := logger.NewStd(os.Stdout, logger.LevelInfo)
+//	c := client.New("auth", "secret", client.WithLogger(l))
+//
+//	// Disable logging explicitly
+//	c := client.New("auth", "secret", client.WithLogger(nil))
+func WithLogger(l logger.Handler) Option {
+	return func(c *Client) {
+		if l == nil {
+			c.logger = logger.Nop{}
+		} else {
+			c.logger = l
+		}
+	}
+}
+
 // New creates a new GSPAY2 API client.
 //
 // Parameters:
@@ -157,6 +200,7 @@ func New(authKey, secretKey string, opts ...Option) *Client {
 		RetryWaitMin: time.Duration(constants.DefaultRetryWaitMin) * time.Millisecond,
 		RetryWaitMax: time.Duration(constants.DefaultRetryWaitMax) * time.Millisecond,
 		Language:     i18n.English,
+		logger:       logger.Nop{},
 	}
 
 	for _, opt := range opts {

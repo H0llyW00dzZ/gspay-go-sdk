@@ -51,13 +51,14 @@ gspay-go-sdk/
 ├── src/
 │   ├── balance/     # Balance query service
 │   ├── client/      # HTTP client and core functionality
+│   │   └── logger/  # Structured logging (Handler interface, Std, Nop)
 │   ├── constants/   # Bank codes, payment statuses, channels
 │   ├── errors/      # Error types and handling
 │   ├── helper/      # Helper utilities
 │   │   ├── amount/  # Amount formatting utilities
 │   │   └── gc/      # Buffer pool management
 │   ├── i18n/        # Internationalization (languages, translations)
-│   ├── internal/    # Internal utilities (signature generation)
+│   ├── internal/    # Internal utilities (signature, sanitize)
 │   ├── payment/     # Payment services (IDR, future THB/MYR)
 │   └── payout/      # Payout services (IDR)
 ├── examples/        # Usage examples
@@ -94,7 +95,7 @@ var defaultTimeout = 30 * time.Second // camelCase for internal variables
 
 - Return typed errors from the `errors` package
 - Use `errors.New` for returning sentinel errors with context and localization
-- Use `fmt.Errorf` for wrapping: `return fmt.Errorf("%w: %s", errors.ErrInvalidAmount, amount)`
+- `errors.New` automatically wraps causes with `%w`, supporting standard `errors.Is`/`errors.As`
 - Include context in error messages
 
 ### Documentation
@@ -137,6 +138,38 @@ When adding user-facing error messages:
    // src/errors/errors.go
    const KeyNewError = i18n.MsgNewErrorKey
    ```
+
+### Logging
+
+When adding logging to SDK components:
+
+1. **Use the logger package** in `src/client/logger`:
+   ```go
+   import "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+   
+   // Log levels
+   logger.LevelDebug  // Detailed debugging
+   logger.LevelInfo   // General operational messages
+   logger.LevelWarn   // Warning conditions
+   logger.LevelError  // Error conditions
+   ```
+
+2. **Implement the Handler interface** for custom loggers:
+   ```go
+   type Handler interface {
+       Log(level Level, msg string, args ...any)
+   }
+   ```
+
+3. **Sanitize endpoints** when logging URLs containing auth keys:
+   ```go
+   import "github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
+   
+   safeEndpoint := sanitize.Endpoint(endpoint)
+   // Redacts auth keys as [REDACTED]
+   ```
+
+4. **Exception**: `WithDebug(true)` mode shows raw endpoints for debugging
 
 ### Modifying API Endpoints
 

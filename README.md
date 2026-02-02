@@ -33,6 +33,7 @@ go get github.com/H0llyW00dzZ/gspay-go-sdk
 gspay-go-sdk/
 ├── src/
 │   ├── client/      # HTTP client and configuration
+│   │   └── logger/  # Structured logging (Handler, Std, Nop)
 │   ├── constants/   # Bank codes, channels, status codes
 │   ├── errors/      # Error types and helpers
 │   ├── i18n/        # Internationalization (language translations)
@@ -42,7 +43,9 @@ gspay-go-sdk/
 │   ├── helper/      # Helper utilities
 │   │   ├── amount/  # Amount formatting utilities
 │   │   └── gc/      # Buffer pool management
-│   └── internal/    # Internal utilities (signature)
+│   └── internal/    # Internal utilities
+│       ├── sanitize/  # Endpoint URL sanitization
+│       └── signature/ # MD5 signature generation
 └── examples/        # Usage examples
 ```
 
@@ -111,6 +114,8 @@ c := client.New(
 | `WithRetryWait` | Set min/max wait between retries | `500ms` / `2s` |
 | `WithHTTPClient` | Use custom HTTP client | Default `http.Client` |
 | `WithLanguage` | Set error message language | `i18n.English` |
+| `WithDebug` | Enable debug logging to stderr | `false` |
+| `WithLogger` | Set custom structured logger | `logger.Nop` (no logging) |
 
 ## Language Support (i18n)
 
@@ -130,6 +135,104 @@ c := client.New("auth-key", "secret-key",
 // Now validation errors will be in Indonesian:
 // "jumlah minimum adalah 10000 IDR" instead of "minimum amount is 10000 IDR"
 ```
+
+## Logging
+
+The SDK provides structured logging with configurable log levels. By default, logging is disabled (no-op).
+
+### Quick Debug Mode
+
+Enable debug logging to stderr for development:
+
+```go
+c := client.New("auth-key", "secret-key",
+    client.WithDebug(true),
+)
+```
+
+### Custom Log Levels
+
+Use the built-in `Std` logger with specific log levels:
+
+```go
+import (
+    "os"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+)
+
+// Log INFO and above (INFO, WARN, ERROR)
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(os.Stdout, logger.LevelInfo)),
+)
+
+// Log only WARN and ERROR
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(os.Stdout, logger.LevelWarn)),
+)
+```
+
+### Log Levels
+
+| Level | Description |
+|-------|-------------|
+| `logger.LevelDebug` | Detailed debugging information |
+| `logger.LevelInfo` | General operational messages |
+| `logger.LevelWarn` | Warning conditions |
+| `logger.LevelError` | Error conditions |
+
+### File Logging
+
+Write logs to a file:
+
+```go
+logFile, err := os.OpenFile("sdk.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+if err != nil {
+    log.Fatal(err)
+}
+defer logFile.Close()
+
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(logger.NewStd(logFile, logger.LevelInfo)),
+)
+```
+
+### Custom Logger Integration
+
+Implement the `logger.Handler` interface to integrate with your logging framework (e.g., `slog`, `zap`, `zerolog`):
+
+```go
+import (
+    "log/slog"
+    "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
+)
+
+type SlogAdapter struct {
+    logger *slog.Logger
+}
+
+func (a *SlogAdapter) Log(level logger.Level, msg string, args ...any) {
+    switch level {
+    case logger.LevelDebug:
+        a.logger.Debug(msg, args...)
+    case logger.LevelInfo:
+        a.logger.Info(msg, args...)
+    case logger.LevelWarn:
+        a.logger.Warn(msg, args...)
+    case logger.LevelError:
+        a.logger.Error(msg, args...)
+    }
+}
+
+// Use with client
+c := client.New("auth-key", "secret-key",
+    client.WithLogger(&SlogAdapter{logger: slog.Default()}),
+)
+```
+
+### Security Note
+
+When using `WithLogger()`, endpoint URLs containing auth keys are automatically sanitized (redacted as `[REDACTED]`). When using `WithDebug(true)`, raw endpoints are shown for debugging purposes.
 
 ## Usage Examples
 
@@ -574,7 +677,7 @@ The SDK currently supports **Indonesia (IDR)** payments. Future releases will ad
 - [ ] Implement payment status polling with webhooks
 - [ ] Add rate limiting and request throttling
 - [ ] Support for custom HTTP clients and proxies
-- [ ] Add comprehensive logging and metrics
+- [x] Add comprehensive logging and metrics
 - [ ] Implement payment reconciliation utilities
 - [ ] Add support for partial refunds (if supported by API)
 - [ ] Multi-currency balance queries
