@@ -33,6 +33,7 @@ go get github.com/H0llyW00dzZ/gspay-go-sdk
 gspay-go-sdk/
 ├── src/
 │   ├── client/      # HTTP client and configuration
+│   │   └── logger/  # Structured logging (Handler, Std, Nop)
 │   ├── constants/   # Bank codes, channels, status codes
 │   ├── errors/      # Error types and helpers
 │   ├── i18n/        # Internationalization (language translations)
@@ -42,7 +43,9 @@ gspay-go-sdk/
 │   ├── helper/      # Helper utilities
 │   │   ├── amount/  # Amount formatting utilities
 │   │   └── gc/      # Buffer pool management
-│   └── internal/    # Internal utilities (signature)
+│   └── internal/    # Internal utilities
+│       ├── sanitize/  # Endpoint URL sanitization
+│       └── signature/ # MD5 signature generation
 └── examples/        # Usage examples
 ```
 

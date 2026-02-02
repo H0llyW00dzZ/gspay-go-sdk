@@ -32,6 +32,7 @@ go get github.com/H0llyW00dzZ/gspay-go-sdk
 gspay-go-sdk/
 ├── src/
 │   ├── client/      # HTTP client dan konfigurasi
+│   │   └── logger/  # Logging terstruktur (Handler, Std, Nop)
 │   ├── constants/   # Kode bank, channel, kode status
 │   ├── errors/      # Tipe error dan helper
 │   ├── i18n/        # Internasionalisasi (terjemahan bahasa)
@@ -41,7 +42,9 @@ gspay-go-sdk/
 │   ├── helper/      # Utilitas helper
 │   │   ├── amount/  # Utilitas pemformatan jumlah
 │   │   └── gc/      # Manajemen buffer pool
-│   └── internal/    # Utilitas internal (tanda tangan)
+│   └── internal/    # Utilitas internal
+│       ├── sanitize/  # Sanitasi URL endpoint
+│       └── signature/ # Pembuatan tanda tangan MD5
 └── examples/        # Contoh penggunaan
 ```
 
