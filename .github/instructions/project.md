@@ -209,10 +209,11 @@ go test ./src/client/...
 
 ### Modifying API Endpoints
 
-1. Check endpoint path in service file
-2. Update signature generation if parameters change
-3. Update request/response structs
-4. Update tests to verify changes
+1. Edit `src/constants/endpoints.go` to add or modify the `EndpointKey` and path in the `endpoints` map.
+2. Update the service implementation to use `constants.GetEndpoint()` instead of hardcoded strings.
+3. Update signature generation if parameters change.
+4. Update request/response structs.
+5. Update tests to verify changes and ensure coverage for new endpoints.
 
 ## API Signature Formulas
 

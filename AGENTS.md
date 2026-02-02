@@ -141,12 +141,25 @@ func (s *MyService) Create(ctx context.Context, req *MyRequest) (*MyResponse, er
     // 2. Format data (e.g., amounts)
     // 3. Generate signature (s.client.GenerateSignature)
     // 4. Build internal API request struct
-    // 5. Execute request (s.client.Post/Get)
-    // 6. Parse response (client.ParseData)
+    // 5. Get endpoint path using constants.GetEndpoint
+    // 6. Execute request (s.client.Post/Get)
+    // 7. Parse response (client.ParseData)
 }
 ```
 
-## 5. Testing Guidelines
+## 5. API Endpoints
+
+**DO NOT** hardcode API endpoints. Use `src/constants/endpoints.go`.
+
+```go
+// Correct usage
+endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointIDRCreate), s.client.AuthKey)
+
+// Incorrect usage
+endpoint := fmt.Sprintf("/v2/integrations/operators/%s/idr/payment", s.client.AuthKey)
+```
+
+## 6. Testing Guidelines
 
 Use `testify` for assertions and table-driven tests.
 
@@ -168,7 +181,7 @@ func TestService_Method(t *testing.T) {
 }
 ```
 
-## 6. API Signature Formulas
+## 7. API Signature Formulas
 
 | Operation | Formula (MD5) |
 |-----------|---------------|

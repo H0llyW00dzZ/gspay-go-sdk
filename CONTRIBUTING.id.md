@@ -135,6 +135,14 @@ Saat menambahkan pesan error yang menghadap pengguna:
    const KeyNewError = i18n.MsgNewErrorKey
    ```
 
+### Memodifikasi Endpoint API
+
+1. Edit `src/constants/endpoints.go` untuk menambah atau memodifikasi `EndpointKey` dan path dalam map `endpoints`.
+2. Update implementasi layanan untuk menggunakan `constants.GetEndpoint()` alih-alih string hardcoded.
+3. Update pembuatan tanda tangan jika parameter berubah.
+4. Update struct request/response.
+5. Update tests untuk memverifikasi perubahan dan memastikan coverage untuk endpoint baru.
+
 ## 🧪 Pengujian
 
 ### Persyaratan Test
