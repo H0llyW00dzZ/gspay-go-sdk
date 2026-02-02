@@ -127,6 +127,13 @@ return nil, &errors.APIError{
 }
 ```
 
+When wrapping errors, use `errors.New` which automatically wraps causes with `%w`:
+
+```go
+// Wrap with context and localization
+return errors.New(s.client.Language, errors.ErrRequestFailed, err)
+```
+
 ## Testing Guidelines
 
 ### Test File Naming

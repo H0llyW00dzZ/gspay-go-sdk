@@ -113,6 +113,10 @@ return nil, errors.NewValidationError("amount",
 
 // Wrapping API errors
 if apiErr := errors.GetAPIError(err); apiErr != nil { /* ... */ }
+
+// Wrapping errors with context and localized message
+// This uses %w for the cause to support errors.Is/As
+return errors.New(s.client.Language, errors.ErrRequestFailed, err)
 ```
 
 ### Amount Formatting
