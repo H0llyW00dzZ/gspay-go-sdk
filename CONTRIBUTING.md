@@ -137,6 +137,14 @@ When adding user-facing error messages:
    const KeyNewError = i18n.MsgNewErrorKey
    ```
 
+### Modifying API Endpoints
+
+1. Edit `src/constants/endpoints.go` to add or modify the `EndpointKey` and path in the `endpoints` map.
+2. Update the service implementation to use `constants.GetEndpoint()` instead of hardcoded strings.
+3. Update signature generation if parameters change.
+4. Update request/response structs.
+5. Update tests to verify changes and ensure coverage for new endpoints.
+
 ## 🧪 Testing
 
 ### Test Requirements
