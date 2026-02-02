@@ -167,22 +167,32 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	return &apiResp, false, nil
 }
 
+// requestParams holds the parameters for a single request attempt.
+type requestParams struct {
+	Method   string
+	FullURL  string
+	Endpoint string
+	Body     io.Reader
+	HasBody  bool
+	Attempt  int
+}
+
 // performRequest executes a single HTTP request attempt.
-func (c *Client) performRequest(ctx context.Context, method, fullURL, endpoint string, reqBody io.Reader, hasBody bool, attempt int) (*Response, bool, error) {
-	req, err := c.createHTTPRequest(ctx, method, fullURL, reqBody, hasBody)
+func (c *Client) performRequest(ctx context.Context, params requestParams) (*Response, bool, error) {
+	req, err := c.createHTTPRequest(ctx, params.Method, params.FullURL, params.Body, params.HasBody)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// Log outgoing request
-	debugEndpoint := endpoint
+	debugEndpoint := params.Endpoint
 	if !c.Debug {
-		debugEndpoint = sanitize.Endpoint(endpoint)
+		debugEndpoint = sanitize.Endpoint(params.Endpoint)
 	}
 	c.logger.Debug("sending request",
-		"method", method,
+		"method", params.Method,
 		"endpoint", debugEndpoint,
-		"attempt", attempt,
+		"attempt", params.Attempt,
 	)
 
 	resp, err := c.HTTPClient.Do(req)
@@ -190,8 +200,8 @@ func (c *Client) performRequest(ctx context.Context, method, fullURL, endpoint s
 		// Log error (only when using custom logger, not debug mode)
 		if !c.Debug {
 			c.logger.Error("request failed",
-				"endpoint", sanitize.Endpoint(endpoint),
-				"attempt", attempt,
+				"endpoint", sanitize.Endpoint(params.Endpoint),
+				"attempt", params.Attempt,
 				"error", err.Error(),
 			)
 		}
@@ -199,7 +209,7 @@ func (c *Client) performRequest(ctx context.Context, method, fullURL, endpoint s
 		return nil, true, errors.New(c.Language, errors.ErrRequestFailed, err)
 	}
 
-	apiResp, retry, err := c.processResponse(resp, endpoint)
+	apiResp, retry, err := c.processResponse(resp, params.Endpoint)
 	if err != nil {
 		return nil, retry, err
 	}
@@ -207,8 +217,8 @@ func (c *Client) performRequest(ctx context.Context, method, fullURL, endpoint s
 	// Log success (only when using custom logger, not debug mode)
 	if !c.Debug {
 		c.logger.Info("request completed successfully",
-			"endpoint", sanitize.Endpoint(endpoint),
-			"attempts", attempt+1,
+			"endpoint", sanitize.Endpoint(params.Endpoint),
+			"attempts", params.Attempt+1,
 		)
 	}
 
@@ -242,7 +252,14 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 			}
 		}
 
-		apiResp, retry, err := c.performRequest(ctx, method, fullURL, endpoint, reqBody, hasBody, attempt)
+		apiResp, retry, err := c.performRequest(ctx, requestParams{
+			Method:   method,
+			FullURL:  fullURL,
+			Endpoint: endpoint,
+			Body:     reqBody,
+			HasBody:  hasBody,
+			Attempt:  attempt,
+		})
 		if err == nil {
 			return apiResp, nil
 		}
