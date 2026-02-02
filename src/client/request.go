@@ -155,18 +155,9 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 	for attempt := 0; attempt <= c.Retries; attempt++ {
 		actualAttempts = attempt
 		if attempt > 0 {
-			// Exponential backoff with jitter to prevent thundering herd
-			baseWait := min(c.RetryWaitMin*time.Duration(1<<(attempt-1)), c.RetryWaitMax)
-			// Add up to 25% jitter
-			var jitter time.Duration
-			if jitterMax := int64(baseWait / 4); jitterMax > 0 {
-				jitter = time.Duration(rand.Int64N(jitterMax))
-			}
-			waitTime := baseWait + jitter
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(waitTime):
+			// Wait with exponential backoff and jitter
+			if err := c.waitBackoff(ctx, attempt); err != nil {
+				return nil, err
 			}
 
 			// Reset body reader for retry
@@ -206,6 +197,25 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
 	}
 	return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries), actualAttempts)
+}
+
+// waitBackoff calculates the backoff duration and waits.
+func (c *Client) waitBackoff(ctx context.Context, attempt int) error {
+	// Exponential backoff with jitter to prevent thundering herd
+	baseWait := min(c.RetryWaitMin*time.Duration(1<<(attempt-1)), c.RetryWaitMax)
+	// Add up to 25% jitter
+	var jitter time.Duration
+	if jitterMax := int64(baseWait / 4); jitterMax > 0 {
+		jitter = time.Duration(rand.Int64N(jitterMax))
+	}
+	waitTime := baseWait + jitter
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(waitTime):
+		return nil
+	}
 }
 
 // DoRequest performs an HTTP request with retry logic.
