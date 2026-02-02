@@ -310,3 +310,30 @@ func TestLoggerIntegration(t *testing.T) {
 		assert.True(t, foundRetry, "expected retry warning log")
 	})
 }
+
+func TestDebugModeMissingLogs(t *testing.T) {
+	t.Run("Debug mode suppresses Error logs", func(t *testing.T) {
+		mockLogger := &MockLogger{}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+
+		c := New("auth", "secret",
+			WithBaseURL(server.URL),
+			WithLogger(mockLogger),
+			WithDebug(true), // Enable debug mode
+			WithRetries(0),
+		)
+
+		_, err := c.Get(t.Context(), "/test", nil)
+		require.Error(t, err)
+
+		// We expect Error logs even in Debug mode
+		assert.NotEmpty(t, mockLogger.ErrorCalls, "Expected Error logs to be present in Debug mode")
+
+		// And we DO get Debug logs
+		assert.NotEmpty(t, mockLogger.DebugCalls, "Expected Debug logs")
+	})
+}

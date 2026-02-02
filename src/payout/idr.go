@@ -135,6 +135,14 @@ func NewIDRService(c *client.Client) *IDRService { return &IDRService{client: c}
 //
 // Signature formula: MD5(transaction_id + player_username + amount + account_number + operator_secret_key)
 func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse, error) {
+	s.client.Logger().Info("creating IDR payout",
+		"transactionID", req.TransactionID,
+		"username", req.Username,
+		"amount", req.Amount,
+		"bankCode", req.BankCode,
+		"accountNumber", req.AccountNumber,
+	)
+
 	// Validate bank code
 	bankCode := strings.ToUpper(req.BankCode)
 	if !constants.IsValidBankIDR(bankCode) {
@@ -182,11 +190,19 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		return nil, err
 	}
 
+	s.client.Logger().Info("IDR payout created",
+		"transactionID", req.TransactionID,
+		"payoutID", result.IDRPayoutID,
+		"status", result.Status,
+	)
+
 	return result, nil
 }
 
 // GetStatus retrieves the current status of an IDR payout.
 func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRStatusResponse, error) {
+	s.client.Logger().Debug("querying IDR payout status", "transactionID", transactionID)
+
 	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointPayoutIDRStatus), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, map[string]string{
 		"transaction_id": transactionID,
@@ -199,6 +215,12 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.Logger().Info("IDR payout status retrieved",
+		"transactionID", result.TransactionID,
+		"status", result.Status,
+		"payoutID", result.IDRPayoutID,
+	)
 
 	return result, nil
 }
@@ -281,11 +303,35 @@ func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
 // verify that the source IP is in the whitelist before verifying the signature.
 // If no whitelist was configured, IP verification is skipped.
 func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string) error {
+	s.client.Logger().Debug("verifying IDR payout callback",
+		"transactionID", callback.TransactionID,
+		"payoutID", callback.IDRPayoutID,
+		"sourceIP", sourceIP,
+	)
+
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		s.client.Logger().Warn("IDR payout callback IP verification failed",
+			"sourceIP", sourceIP,
+			"error", err.Error(),
+		)
 		return err
 	}
 
 	// Then verify signature
-	return s.VerifyCallback(callback)
+	if err := s.VerifyCallback(callback); err != nil {
+		s.client.Logger().Warn("IDR payout callback signature verification failed",
+			"transactionID", callback.TransactionID,
+			"error", err.Error(),
+		)
+		return err
+	}
+
+	s.client.Logger().Info("IDR payout callback verified",
+		"transactionID", callback.TransactionID,
+		"payoutID", callback.IDRPayoutID,
+		"completed", callback.Completed,
+		"success", callback.PayoutSuccess,
+	)
+	return nil
 }

@@ -106,14 +106,16 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 		// during service deployments or load balancer routing changes.
 		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
 
-		// Log error (only when using custom logger, not debug mode)
+		// Log error
+		logEndpoint := endpoint
 		if !c.Debug {
-			c.logger.Error("HTTP error response",
-				"endpoint", sanitize.Endpoint(endpoint),
-				"statusCode", resp.StatusCode,
-				"retryable", retry,
-			)
+			logEndpoint = sanitize.Endpoint(endpoint)
 		}
+		c.logger.Error("HTTP error response",
+			"endpoint", logEndpoint,
+			"statusCode", resp.StatusCode,
+			"retryable", retry,
+		)
 
 		respBuf.Reset()
 		gc.Default.Put(respBuf)
@@ -197,14 +199,16 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		// Log error (only when using custom logger, not debug mode)
+		// Log error
+		logEndpoint := params.Endpoint
 		if !c.Debug {
-			c.logger.Error("request failed",
-				"endpoint", sanitize.Endpoint(params.Endpoint),
-				"attempt", params.Attempt,
-				"error", err.Error(),
-			)
+			logEndpoint = sanitize.Endpoint(params.Endpoint)
 		}
+		c.logger.Error("request failed",
+			"endpoint", logEndpoint,
+			"attempt", params.Attempt,
+			"error", err.Error(),
+		)
 		// Retry on transient network errors
 		return nil, true, errors.New(c.Language, errors.ErrRequestFailed, err)
 	}
@@ -214,13 +218,15 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 		return nil, retry, err
 	}
 
-	// Log success (only when using custom logger, not debug mode)
+	// Log success
+	logEndpoint := params.Endpoint
 	if !c.Debug {
-		c.logger.Info("request completed successfully",
-			"endpoint", sanitize.Endpoint(params.Endpoint),
-			"attempts", params.Attempt+1,
-		)
+		logEndpoint = sanitize.Endpoint(params.Endpoint)
 	}
+	c.logger.Info("request completed successfully",
+		"endpoint", logEndpoint,
+		"attempts", params.Attempt+1,
+	)
 
 	return apiResp, false, nil
 }
@@ -232,14 +238,16 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 	for attempt := 0; attempt <= c.Retries; attempt++ {
 		actualAttempts = attempt
 		if attempt > 0 {
-			// Log retry attempt (only when using custom logger, not debug mode)
+			// Log retry attempt
+			logEndpoint := endpoint
 			if !c.Debug {
-				c.logger.Warn("retrying request",
-					"endpoint", sanitize.Endpoint(endpoint),
-					"attempt", attempt,
-					"maxRetries", c.Retries,
-				)
+				logEndpoint = sanitize.Endpoint(endpoint)
 			}
+			c.logger.Warn("retrying request",
+				"endpoint", logEndpoint,
+				"attempt", attempt,
+				"maxRetries", c.Retries,
+			)
 
 			// Wait with exponential backoff and jitter
 			if err := c.waitBackoff(ctx, attempt); err != nil {
@@ -266,14 +274,16 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 
 		lastErr = err
 		if retry && attempt < c.Retries {
-			// Log retryable error (only when using custom logger, not debug mode)
+			// Log retryable error
+			logEndpoint := endpoint
 			if !c.Debug {
-				c.logger.Warn("retryable error occurred",
-					"endpoint", sanitize.Endpoint(endpoint),
-					"attempt", attempt,
-					"error", err.Error(),
-				)
+				logEndpoint = sanitize.Endpoint(endpoint)
 			}
+			c.logger.Warn("retryable error occurred",
+				"endpoint", logEndpoint,
+				"attempt", attempt,
+				"error", err.Error(),
+			)
 			continue
 		}
 		break

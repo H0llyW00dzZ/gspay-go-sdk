@@ -184,6 +184,14 @@ func WithLogger(l logger.Handler) Option {
 	}
 }
 
+// Logger returns the configured logger instance.
+//
+// This allows services and other packages to use the same logger configuration
+// as the client for consistent logging across the SDK.
+func (c *Client) Logger() logger.Handler {
+	return c.logger
+}
+
 // New creates a new GSPAY2 API client.
 //
 // Parameters:

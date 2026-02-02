@@ -80,6 +80,12 @@ func NewUSDTService(c *client.Client) *USDTService {
 //
 // Signature formula: MD5(transaction_id + player_username + amount + operator_secret_key)
 func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTResponse, error) {
+	s.client.Logger().Info("creating USDT payment",
+		"transactionID", req.TransactionID,
+		"username", req.Username,
+		"amount", req.Amount,
+	)
+
 	// Validate amount (minimum 1.00 USDT)
 	if req.Amount < constants.MinAmountUSDT {
 		return nil, errors.NewValidationError(s.client.Language, "amount", errors.GetMessage(s.client.Language, errors.KeyMinAmountUSDT))
@@ -115,6 +121,11 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 	if err != nil {
 		return nil, err
 	}
+
+	s.client.Logger().Info("USDT payment created",
+		"transactionID", req.TransactionID, // Response doesn't include transactionID, so use request's
+		"paymentID", result.CryptoPaymentID,
+	)
 
 	return result, nil
 }
@@ -192,11 +203,34 @@ func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
 // verify that the source IP is in the whitelist before verifying the signature.
 // If no whitelist was configured, IP verification is skipped.
 func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP string) error {
+	s.client.Logger().Debug("verifying USDT callback",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.CryptoPaymentID,
+		"sourceIP", sourceIP,
+	)
+
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		s.client.Logger().Warn("USDT callback IP verification failed",
+			"sourceIP", sourceIP,
+			"error", err.Error(),
+		)
 		return err
 	}
 
 	// Then verify signature
-	return s.VerifyCallback(callback)
+	if err := s.VerifyCallback(callback); err != nil {
+		s.client.Logger().Warn("USDT callback signature verification failed",
+			"transactionID", callback.TransactionID,
+			"error", err.Error(),
+		)
+		return err
+	}
+
+	s.client.Logger().Info("USDT callback verified",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.CryptoPaymentID,
+		"status", callback.Status,
+	)
+	return nil
 }
