@@ -136,8 +136,12 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	}
 
 	// Debug logging
+	debugEndpoint := endpoint
+	if !c.Debug {
+		debugEndpoint = sanitize.Endpoint(endpoint)
+	}
 	c.logger.Debug("API response received",
-		"endpoint", endpoint,
+		"endpoint", debugEndpoint,
 		"status", resp.StatusCode,
 		"body", string(respBuf.Bytes()),
 	)
@@ -196,9 +200,13 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		}
 
 		// Log outgoing request
+		debugEndpoint := endpoint
+		if !c.Debug {
+			debugEndpoint = sanitize.Endpoint(endpoint)
+		}
 		c.logger.Debug("sending request",
 			"method", method,
-			"endpoint", endpoint,
+			"endpoint", debugEndpoint,
 			"attempt", attempt,
 		)
 
