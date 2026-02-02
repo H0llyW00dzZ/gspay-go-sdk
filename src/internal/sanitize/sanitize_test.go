@@ -66,6 +66,26 @@ func TestEndpoint(t *testing.T) {
 			input:    "v2/integrations/operators/secret123/idr/payment",
 			expected: "v2/integrations/operators/[REDACTED]/idr/payment",
 		},
+		{
+			name:     "handles double slash before operator",
+			input:    "site.com//v2/integrations/operators/secret123/idr/payment",
+			expected: "site.com//v2/integrations/operators/[REDACTED]/idr/payment",
+		},
+		{
+			name:     "handles operators at end of string (no key)",
+			input:    "/v2/integrations/operators",
+			expected: "/v2/integrations/operators",
+		},
+		{
+			name:     "handles operators followed by empty segment",
+			input:    "/v2/integrations/operators//something",
+			expected: "/v2/integrations/operators//something",
+		},
+		{
+			name:     "handles simple path without leading slash",
+			input:    "operators/secret123/payment",
+			expected: "operators/[REDACTED]/payment",
+		},
 	}
 
 	for _, tc := range tests {
