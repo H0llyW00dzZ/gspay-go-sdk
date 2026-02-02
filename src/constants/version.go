@@ -26,10 +26,10 @@ const (
 	// SDKVersion is the current version of this SDK.
 	// This should be updated with each release.
 	SDKVersion = "0.3.6"
-)
 
-// SDKRepository is the GitHub repository URL for this SDK.
-const SDKRepository = "https://github.com/H0llyW00dzZ/gspay-go-sdk"
+	// SDKRepository is the GitHub repository URL for this SDK.
+	SDKRepository = "https://github.com/H0llyW00dzZ/gspay-go-sdk"
+)
 
 // UserAgent returns the formatted User-Agent string for HTTP requests.
 //
