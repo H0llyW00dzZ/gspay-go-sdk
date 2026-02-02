@@ -233,28 +233,44 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 // Formula: MD5(id + account_number + amount + transaction_id + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10000.00").
 func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, receivedSignature string) error {
+	s.client.Logger().Debug("verifying IDR payout signature",
+		"payoutID", id,
+		"transactionID", transactionID,
+		"accountNumber", accountNumber,
+		"amount", amount,
+	)
+
 	lang := errors.Language(s.client.Language)
 
 	// Check required fields
 	if id == "" {
+		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "id")
 	}
 	if accountNumber == "" {
+		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "account_number")
 		return errors.New(lang, errors.ErrMissingCallbackField, "account_number")
 	}
 	if amount == "" {
+		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "amount")
 		return errors.New(lang, errors.ErrMissingCallbackField, "amount")
 	}
 	if transactionID == "" {
+		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "transaction_id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "transaction_id")
 	}
 	if receivedSignature == "" {
+		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "signature")
 		return errors.New(lang, errors.ErrMissingCallbackField, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	formattedAmount, err := amountfmt.Format(amount, s.client.Language)
 	if err != nil {
+		s.client.Logger().Warn("IDR payout signature verification failed: invalid amount format",
+			"amount", amount,
+			"error", err.Error(),
+		)
 		return err
 	}
 
@@ -271,9 +287,17 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
+		s.client.Logger().Warn("IDR payout signature verification failed: signature mismatch",
+			"payoutID", id,
+			"transactionID", transactionID,
+		)
 		return errors.New(lang, errors.ErrInvalidSignature)
 	}
 
+	s.client.Logger().Debug("IDR payout signature verified",
+		"payoutID", id,
+		"transactionID", transactionID,
+	)
 	return nil
 }
 
@@ -285,13 +309,30 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 // This method only verifies the signature. To also verify the source IP,
 // use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
-	return s.VerifySignature(
+	s.client.Logger().Debug("verifying IDR payout callback signature",
+		"payoutID", callback.IDRPayoutID,
+		"transactionID", callback.TransactionID,
+		"accountNumber", callback.AccountNumber,
+		"amount", callback.Amount,
+	)
+
+	if err := s.VerifySignature(
 		string(callback.IDRPayoutID),
 		callback.AccountNumber,
 		string(callback.Amount),
 		callback.TransactionID,
 		callback.Signature,
+	); err != nil {
+		return err
+	}
+
+	s.client.Logger().Info("IDR payout callback signature verified",
+		"payoutID", callback.IDRPayoutID,
+		"transactionID", callback.TransactionID,
+		"completed", callback.Completed,
+		"success", callback.PayoutSuccess,
 	)
+	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of an IDR payout callback.
