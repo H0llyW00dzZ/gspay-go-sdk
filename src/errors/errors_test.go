@@ -185,18 +185,32 @@ func TestGetAPIError(t *testing.T) {
 }
 
 func TestValidationError_Error(t *testing.T) {
-	err := &ValidationError{
-		Field:   "amount",
-		Message: "must be positive",
-	}
-	expected := "gspay: validation error for amount: must be positive"
-	assert.Equal(t, expected, err.Error())
+	t.Run("formats English error", func(t *testing.T) {
+		err := &ValidationError{
+			Field:   "amount",
+			Message: "must be positive",
+			Lang:    i18n.English,
+		}
+		expected := "gspay: validation error for amount: must be positive"
+		assert.Equal(t, expected, err.Error())
+	})
+
+	t.Run("formats Indonesian error", func(t *testing.T) {
+		err := &ValidationError{
+			Field:   "amount",
+			Message: "jumlah minimum adalah 10000 IDR",
+			Lang:    i18n.Indonesian,
+		}
+		expected := "gspay: kesalahan validasi untuk amount: jumlah minimum adalah 10000 IDR"
+		assert.Equal(t, expected, err.Error())
+	})
 }
 
 func TestNewValidationError(t *testing.T) {
-	err := NewValidationError("bank_code", "invalid code")
+	err := NewValidationError(i18n.English, "bank_code", "invalid code")
 	assert.Equal(t, "bank_code", err.Field)
 	assert.Equal(t, "invalid code", err.Message)
+	assert.Equal(t, i18n.English, err.Lang)
 }
 
 func TestIsValidationError(t *testing.T) {
