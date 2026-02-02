@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package errors provides error types for the GSPAY2 SDK.
 package errors
 
 import (

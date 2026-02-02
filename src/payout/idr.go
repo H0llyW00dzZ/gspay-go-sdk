@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package payout provides payout-related functionality for the GSPAY2 SDK.
 package payout
 
 import (

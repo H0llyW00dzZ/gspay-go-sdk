@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package balance provides balance query functionality for the GSPAY2 SDK.
 package balance
 
 import (

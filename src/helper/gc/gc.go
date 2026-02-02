@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gc provides buffer pool management for efficient memory reuse.
-//
-// This package wraps [bytebufferpool] to provide a consistent interface for
-// buffer pooling, reducing memory allocations in high-throughput scenarios
-// such as API request/response handling.
 package gc
 
 import (
