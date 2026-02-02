@@ -125,6 +125,13 @@ func NewIDRService(c *client.Client) *IDRService { return &IDRService{client: c}
 //
 // Signature formula: MD5(transaction_id + player_username + amount + operator_secret_key)
 func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse, error) {
+	s.client.Logger().Info("creating IDR payment",
+		"transactionID", req.TransactionID,
+		"username", req.Username,
+		"amount", req.Amount,
+		"channel", req.Channel,
+	)
+
 	// Validate transaction ID length
 	if len(req.TransactionID) < constants.MinTransactionIDLength ||
 		len(req.TransactionID) > constants.MaxTransactionIDLength {
@@ -169,11 +176,19 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		return nil, err
 	}
 
+	s.client.Logger().Info("IDR payment created",
+		"transactionID", result.TransactionID,
+		"paymentID", result.IDRPaymentID,
+		"status", result.Status,
+	)
+
 	return result, nil
 }
 
 // GetStatus retrieves the current status of an IDR payment order.
 func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRStatusResponse, error) {
+	s.client.Logger().Debug("querying IDR payment status", "transactionID", transactionID)
+
 	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointIDRStatus), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, map[string]string{
 		"transaction_id": transactionID,
@@ -187,6 +202,12 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 		return nil, err
 	}
 
+	s.client.Logger().Info("IDR payment status retrieved",
+		"transactionID", result.TransactionID,
+		"status", result.Status,
+		"paymentID", result.IDRPaymentID,
+	)
+
 	return result, nil
 }
 
@@ -198,25 +219,40 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 // Formula: MD5(id + amount + transaction_id + status + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10000.00").
 func (s *IDRService) VerifySignature(id, amount, transactionID string, status constants.PaymentStatus, receivedSignature string) error {
+	s.client.Logger().Debug("verifying IDR payment signature",
+		"paymentID", id,
+		"transactionID", transactionID,
+		"amount", amount,
+		"status", status,
+	)
+
 	lang := errors.Language(s.client.Language)
 
 	// Check required fields
 	if id == "" {
+		s.client.Logger().Warn("IDR signature verification failed: missing field", "field", "id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "id")
 	}
 	if amount == "" {
+		s.client.Logger().Warn("IDR signature verification failed: missing field", "field", "amount")
 		return errors.New(lang, errors.ErrMissingCallbackField, "amount")
 	}
 	if transactionID == "" {
+		s.client.Logger().Warn("IDR signature verification failed: missing field", "field", "transaction_id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "transaction_id")
 	}
 	if receivedSignature == "" {
+		s.client.Logger().Warn("IDR signature verification failed: missing field", "field", "signature")
 		return errors.New(lang, errors.ErrMissingCallbackField, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	formattedAmount, err := amountfmt.Format(amount, s.client.Language)
 	if err != nil {
+		s.client.Logger().Warn("IDR signature verification failed: invalid amount format",
+			"amount", amount,
+			"error", err.Error(),
+		)
 		return err
 	}
 
@@ -232,9 +268,17 @@ func (s *IDRService) VerifySignature(id, amount, transactionID string, status co
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
+		s.client.Logger().Warn("IDR signature verification failed: signature mismatch",
+			"paymentID", id,
+			"transactionID", transactionID,
+		)
 		return errors.New(lang, errors.ErrInvalidSignature)
 	}
 
+	s.client.Logger().Debug("IDR payment signature verified",
+		"paymentID", id,
+		"transactionID", transactionID,
+	)
 	return nil
 }
 
@@ -245,13 +289,27 @@ func (s *IDRService) VerifySignature(id, amount, transactionID string, status co
 //
 // This method verifies the signature included in the status response.
 func (s *IDRService) VerifyStatusSignature(status *IDRStatusResponse) error {
-	return s.VerifySignature(
+	s.client.Logger().Debug("verifying IDR status signature",
+		"paymentID", status.IDRPaymentID,
+		"transactionID", status.TransactionID,
+		"status", status.Status,
+	)
+
+	if err := s.VerifySignature(
 		string(status.IDRPaymentID),
 		string(status.Amount),
 		status.TransactionID,
 		status.Status,
 		status.Signature,
+	); err != nil {
+		return err
+	}
+
+	s.client.Logger().Info("IDR status signature verified",
+		"paymentID", status.IDRPaymentID,
+		"transactionID", status.TransactionID,
 	)
+	return nil
 }
 
 // VerifyCallback verifies the signature of an IDR payment callback.
@@ -262,13 +320,29 @@ func (s *IDRService) VerifyStatusSignature(status *IDRStatusResponse) error {
 // This method only verifies the signature. To also verify the source IP,
 // use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
-	return s.VerifySignature(
+	s.client.Logger().Debug("verifying IDR callback signature",
+		"paymentID", callback.IDRPaymentID,
+		"transactionID", callback.TransactionID,
+		"amount", callback.Amount,
+		"status", callback.Status,
+	)
+
+	if err := s.VerifySignature(
 		string(callback.IDRPaymentID),
 		string(callback.Amount),
 		callback.TransactionID,
 		callback.Status,
 		callback.Signature,
+	); err != nil {
+		return err
+	}
+
+	s.client.Logger().Info("IDR callback signature verified",
+		"paymentID", callback.IDRPaymentID,
+		"transactionID", callback.TransactionID,
+		"status", callback.Status,
 	)
+	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of an IDR payment callback.
@@ -289,11 +363,34 @@ func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
 //	    }
 //	}
 func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string) error {
+	s.client.Logger().Debug("verifying IDR callback",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.IDRPaymentID,
+		"sourceIP", sourceIP,
+	)
+
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		s.client.Logger().Warn("IDR callback IP verification failed",
+			"sourceIP", sourceIP,
+			"error", err.Error(),
+		)
 		return err
 	}
 
 	// Then verify signature
-	return s.VerifyCallback(callback)
+	if err := s.VerifyCallback(callback); err != nil {
+		s.client.Logger().Warn("IDR callback signature verification failed",
+			"transactionID", callback.TransactionID,
+			"error", err.Error(),
+		)
+		return err
+	}
+
+	s.client.Logger().Info("IDR callback verified",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.IDRPaymentID,
+		"status", callback.Status,
+	)
+	return nil
 }

@@ -38,11 +38,23 @@ func NewService(c *client.Client) *Service { return &Service{client: c} }
 
 // Get queries the operator's available settlement balance.
 func (s *Service) Get(ctx context.Context) (*Response, error) {
+	s.client.Logger().Debug("querying operator balance")
+
 	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointBalance), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.ParseData[Response](resp.Data, s.client.Language)
+	result, err := client.ParseData[Response](resp.Data, s.client.Language)
+	if err != nil {
+		return nil, err
+	}
+
+	s.client.Logger().Info("balance retrieved",
+		"idr_balance", result.Balance,
+		"usdt_balance", result.UsdtBalance,
+	)
+
+	return result, nil
 }

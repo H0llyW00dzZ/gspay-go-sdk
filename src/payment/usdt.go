@@ -80,6 +80,12 @@ func NewUSDTService(c *client.Client) *USDTService {
 //
 // Signature formula: MD5(transaction_id + player_username + amount + operator_secret_key)
 func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTResponse, error) {
+	s.client.Logger().Info("creating USDT payment",
+		"transactionID", req.TransactionID,
+		"username", req.Username,
+		"amount", req.Amount,
+	)
+
 	// Validate amount (minimum 1.00 USDT)
 	if req.Amount < constants.MinAmountUSDT {
 		return nil, errors.NewValidationError(s.client.Language, "amount", errors.GetMessage(s.client.Language, errors.KeyMinAmountUSDT))
@@ -116,6 +122,11 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 		return nil, err
 	}
 
+	s.client.Logger().Info("USDT payment created",
+		"transactionID", req.TransactionID, // Response doesn't include transactionID, so use request's
+		"paymentID", result.CryptoPaymentID,
+	)
+
 	return result, nil
 }
 
@@ -127,25 +138,40 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 // Formula: MD5(cryptopayment_id + amount + transaction_id + status + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10.50").
 func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID string, status constants.PaymentStatus, receivedSignature string) error {
+	s.client.Logger().Debug("verifying USDT payment signature",
+		"paymentID", cryptoPaymentID,
+		"transactionID", transactionID,
+		"amount", amount,
+		"status", status,
+	)
+
 	lang := errors.Language(s.client.Language)
 
 	// Check required fields
 	if cryptoPaymentID == "" {
+		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "cryptopayment_id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "cryptopayment_id")
 	}
 	if amount == "" {
+		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "amount")
 		return errors.New(lang, errors.ErrMissingCallbackField, "amount")
 	}
 	if transactionID == "" {
+		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "transaction_id")
 		return errors.New(lang, errors.ErrMissingCallbackField, "transaction_id")
 	}
 	if receivedSignature == "" {
+		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "signature")
 		return errors.New(lang, errors.ErrMissingCallbackField, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	formattedAmount, err := amountfmt.Format(amount, s.client.Language)
 	if err != nil {
+		s.client.Logger().Warn("USDT signature verification failed: invalid amount format",
+			"amount", amount,
+			"error", err.Error(),
+		)
 		return err
 	}
 
@@ -161,9 +187,17 @@ func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID str
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
+		s.client.Logger().Warn("USDT signature verification failed: signature mismatch",
+			"paymentID", cryptoPaymentID,
+			"transactionID", transactionID,
+		)
 		return errors.New(lang, errors.ErrInvalidSignature)
 	}
 
+	s.client.Logger().Debug("USDT payment signature verified",
+		"paymentID", cryptoPaymentID,
+		"transactionID", transactionID,
+	)
 	return nil
 }
 
@@ -174,13 +208,29 @@ func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID str
 // This method only verifies the signature. To also verify the source IP,
 // use [USDTService.VerifyCallbackWithIP] instead.
 func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
-	return s.VerifySignature(
+	s.client.Logger().Debug("verifying USDT callback signature",
+		"paymentID", callback.CryptoPaymentID,
+		"transactionID", callback.TransactionID,
+		"amount", callback.Amount,
+		"status", callback.Status,
+	)
+
+	if err := s.VerifySignature(
 		callback.CryptoPaymentID,
 		callback.Amount,
 		callback.TransactionID,
 		callback.Status,
 		callback.Signature,
+	); err != nil {
+		return err
+	}
+
+	s.client.Logger().Info("USDT callback signature verified",
+		"paymentID", callback.CryptoPaymentID,
+		"transactionID", callback.TransactionID,
+		"status", callback.Status,
 	)
+	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of a USDT payment callback.
@@ -192,11 +242,34 @@ func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
 // verify that the source IP is in the whitelist before verifying the signature.
 // If no whitelist was configured, IP verification is skipped.
 func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP string) error {
+	s.client.Logger().Debug("verifying USDT callback",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.CryptoPaymentID,
+		"sourceIP", sourceIP,
+	)
+
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
+		s.client.Logger().Warn("USDT callback IP verification failed",
+			"sourceIP", sourceIP,
+			"error", err.Error(),
+		)
 		return err
 	}
 
 	// Then verify signature
-	return s.VerifyCallback(callback)
+	if err := s.VerifyCallback(callback); err != nil {
+		s.client.Logger().Warn("USDT callback signature verification failed",
+			"transactionID", callback.TransactionID,
+			"error", err.Error(),
+		)
+		return err
+	}
+
+	s.client.Logger().Info("USDT callback verified",
+		"transactionID", callback.TransactionID,
+		"paymentID", callback.CryptoPaymentID,
+		"status", callback.Status,
+	)
+	return nil
 }
