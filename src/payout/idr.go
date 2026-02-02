@@ -172,7 +172,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		apiReq.Description = req.Description
 	}
 
-	endpoint := fmt.Sprintf("/v2/integrations/operators/%s/idr/payout", s.client.AuthKey)
+	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointPayoutIDRCreate), s.client.AuthKey)
 	resp, err := s.client.Post(ctx, endpoint, apiReq)
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 
 // GetStatus retrieves the current status of an IDR payout.
 func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRStatusResponse, error) {
-	endpoint := fmt.Sprintf("/v2/integrations/operators/%s/idr/payout/status", s.client.AuthKey)
+	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointPayoutIDRStatus), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, map[string]string{
 		"transaction_id": transactionID,
 	})
