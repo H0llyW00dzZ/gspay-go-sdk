@@ -34,18 +34,37 @@ func New(lang i18n.Language, sentinel error, args ...any) error {
 
 	msg := i18n.Get(lang, key)
 
-	if len(args) > 0 {
-		// Handle cause (error)
-		if cause, ok := args[0].(error); ok && cause != nil {
-			// Wrapping sentinel error inside a new error with localized message
-			baseErr := fmt.Errorf("%s: %w", msg, sentinel)
-			// Returning the base error wrapped with the cause
-			return fmt.Errorf("%w: %v", baseErr, cause)
+	var cause error
+	var contextStr string
+
+	// Iterate over args to find cause and context
+	for _, arg := range args {
+		switch v := arg.(type) {
+		case error:
+			if cause == nil { // Use the first error found as cause
+				cause = v
+			}
+		case string:
+			if contextStr == "" && v != "" { // Use the first non-empty string as context
+				contextStr = v
+			}
 		}
-		// Handle context (string)
-		if contextStr, ok := args[0].(string); ok && contextStr != "" {
-			return fmt.Errorf("%s: %s: %w", msg, contextStr, sentinel)
+	}
+
+	if cause != nil {
+		if contextStr != "" {
+			// Wrap sentinel, context, and cause
+			// Format: "message: context: sentinel: cause"
+			// using %w for both sentinel and cause to allow errors.Is/As to work for both
+			return fmt.Errorf("%s: %s: %w: %w", msg, contextStr, sentinel, cause)
 		}
+		// Wrap sentinel and cause
+		// Format: "message: sentinel: cause"
+		return fmt.Errorf("%s: %w: %w", msg, sentinel, cause)
+	}
+
+	if contextStr != "" {
+		return fmt.Errorf("%s: %s: %w", msg, contextStr, sentinel)
 	}
 
 	return fmt.Errorf("%s: %w", msg, sentinel)

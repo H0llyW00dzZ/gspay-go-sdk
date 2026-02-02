@@ -22,25 +22,22 @@ import "strings"
 //   - /v2/integrations/operator/{authkey}/...  (singular - e.g., balance)
 //   - /v2/integrations/operators/{authkey}/... (plural - e.g., USDT)
 //
-// The auth key in position 4 is replaced with "[REDACTED]".
+// The auth key following "operator" or "operators" is replaced with "[REDACTED]".
 //
 // Example:
 //
 //	sanitize.Endpoint("/v2/integrations/operators/secret123/idr/payment")
 //	// Returns: "/v2/integrations/operators/[REDACTED]/idr/payment"
 func Endpoint(endpoint string) string {
-	// Path structure after split:
-	// parts[0] = "" (empty, from leading slash)
-	// parts[1] = "v2"
-	// parts[2] = "integrations"
-	// parts[3] = "operator" or "operators"
-	// parts[4] = authkey (to be redacted)
-	// parts[5+] = remaining path segments
 	parts := strings.Split(endpoint, "/")
-	if len(parts) >= 5 && parts[1] == "v2" && parts[2] == "integrations" && len(parts[4]) > 0 {
-		if parts[3] == "operator" || parts[3] == "operators" {
-			parts[4] = "[REDACTED]"
-			return strings.Join(parts, "/")
+	for i, part := range parts {
+		// Check for operator/operators and ensure there is a next part to redact
+		if (part == "operator" || part == "operators") && i+1 < len(parts) {
+			// Check if the next part is not empty
+			if len(parts[i+1]) > 0 {
+				parts[i+1] = "[REDACTED]"
+				return strings.Join(parts, "/")
+			}
 		}
 	}
 	return endpoint

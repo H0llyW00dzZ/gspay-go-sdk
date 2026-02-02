@@ -61,6 +61,11 @@ func TestEndpoint(t *testing.T) {
 			input:    "/v2/integrations/operators/secret123/idr/payment?foo=bar",
 			expected: "/v2/integrations/operators/[REDACTED]/idr/payment?foo=bar",
 		},
+		{
+			name:     "redacts auth key without leading slash",
+			input:    "v2/integrations/operators/secret123/idr/payment",
+			expected: "v2/integrations/operators/[REDACTED]/idr/payment",
+		},
 	}
 
 	for _, tc := range tests {
