@@ -105,7 +105,7 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 		Signature:     sig,
 	}
 
-	endpoint := fmt.Sprintf("/v2/integrations/operators/%s/cryptocurrency/trc20/usdt", s.client.AuthKey)
+	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointUSDTCreate), s.client.AuthKey)
 	resp, err := s.client.Post(ctx, endpoint, apiReq)
 	if err != nil {
 		return nil, err
