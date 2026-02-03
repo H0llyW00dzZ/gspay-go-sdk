@@ -104,7 +104,9 @@ var defaultTimeout = 30 * time.Second // camelCase untuk variabel internal
 
 ### Internasionalisasi (i18n)
 
-Saat menambahkan pesan error yang menghadap pengguna:
+SDK mendukung pesan error **dan pesan log** yang terlokalisasi. Saat menambahkan pesan yang menghadap pengguna:
+
+#### Menambahkan Pesan Error
 
 1. **Tambahkan message key** di `src/i18n/messages.go`:
    ```go
@@ -136,6 +138,45 @@ Saat menambahkan pesan error yang menghadap pengguna:
    // src/errors/errors.go
    const KeyNewError = i18n.MsgNewErrorKey
    ```
+
+#### Menambahkan Pesan Log
+
+1. **Tambahkan log message key** di `src/i18n/messages.go`:
+   ```go
+   const (
+       LogNewOperation MessageKey = "log_new_operation"
+   )
+   ```
+
+2. **Tambahkan terjemahan** untuk semua bahasa yang didukung:
+   ```go
+   var translations = map[Language]map[MessageKey]string{
+       English: {
+           LogNewOperation: "performing new operation",
+       },
+       Indonesian: {
+           LogNewOperation: "melakukan operasi baru",
+       },
+   }
+   ```
+
+3. **Gunakan helper I18n dari client** dalam kode service:
+   ```go
+   // Dalam method service, gunakan s.client.I18n() untuk pesan log
+   s.client.Logger().Info(s.client.I18n(i18n.LogNewOperation),
+       "key", "value",
+   )
+   
+   // Dalam method client, gunakan c.I18n() langsung
+   c.logger.Debug(c.I18n(i18n.LogSendingRequest),
+       "endpoint", c.LogEndpoint(endpoint),
+   )
+   ```
+
+#### Konvensi Penamaan Message Key
+
+- **Pesan error**: Awali dengan `Msg` (misal: `MsgInvalidAmount`, `MsgRequestFailed`)
+- **Pesan log**: Awali dengan `Log` (misal: `LogCreatingIDRPayment`, `LogRequestCompleted`)
 
 ### Logging
 

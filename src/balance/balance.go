@@ -20,6 +20,7 @@ import (
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
 // Response represents the response from querying operator balance.
@@ -38,7 +39,7 @@ func NewService(c *client.Client) *Service { return &Service{client: c} }
 
 // Get queries the operator's available settlement balance.
 func (s *Service) Get(ctx context.Context) (*Response, error) {
-	s.client.Logger().Debug("querying operator balance")
+	s.client.Logger().Debug(s.client.I18n(i18n.LogQueryingBalance))
 
 	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointBalance), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, nil)
@@ -51,7 +52,7 @@ func (s *Service) Get(ctx context.Context) (*Response, error) {
 		return nil, err
 	}
 
-	s.client.Logger().Info("balance retrieved",
+	s.client.Logger().Info(s.client.I18n(i18n.LogBalanceRetrieved),
 		"idr_balance", result.Balance,
 		"usdt_balance", result.UsdtBalance,
 	)

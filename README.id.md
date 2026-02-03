@@ -208,7 +208,7 @@ Saat menggunakan `WithLogger()`, URL endpoint yang mengandung auth key secara ot
 
 ## Dukungan Bahasa (i18n)
 
-SDK mendukung pesan error terlokalisasi. Bahasa yang didukung saat ini: **English** (default) dan **Indonesian**.
+SDK mendukung pesan error dan pesan log terlokalisasi. Bahasa yang didukung saat ini: **English** (default) dan **Indonesian**.
 
 ```go
 import (
@@ -216,13 +216,18 @@ import (
     "github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
-// Gunakan pesan error dalam Bahasa Indonesia
+// Gunakan Bahasa Indonesia untuk error dan pesan log
 c := client.New("auth-key", "secret-key",
     client.WithLanguage(i18n.Indonesian),
+    client.WithDebug(true), // Aktifkan logging untuk melihat pesan terlokalisasi
 )
 
 // Sekarang error validasi akan dalam Bahasa Indonesia:
 // "jumlah minimum adalah 10000 IDR" bukan "minimum amount is 10000 IDR"
+
+// Pesan log juga akan dalam Bahasa Indonesia:
+// "membuat pembayaran IDR" bukan "creating IDR payment"
+// "permintaan berhasil diselesaikan" bukan "request completed successfully"
 ```
 
 ## Contoh Penggunaan

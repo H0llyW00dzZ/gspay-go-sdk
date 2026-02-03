@@ -24,6 +24,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	amountfmt "github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/amount"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
 // IDRRequest represents a request to create an IDR payout (withdrawal).
@@ -135,7 +136,7 @@ func NewIDRService(c *client.Client) *IDRService { return &IDRService{client: c}
 //
 // Signature formula: MD5(transaction_id + player_username + amount + account_number + operator_secret_key)
 func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse, error) {
-	s.client.Logger().Info("creating IDR payout",
+	s.client.Logger().Info(s.client.I18n(i18n.LogCreatingIDRPayout),
 		"transactionID", req.TransactionID,
 		"username", req.Username,
 		"amount", req.Amount,
@@ -152,7 +153,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 
 	// Validate amount (minimum 10000 IDR)
 	if req.Amount < constants.MinAmountIDR {
-		return nil, errors.NewValidationError(s.client.Language, "amount", errors.GetMessage(s.client.Language, errors.KeyMinPayoutAmountIDR))
+		return nil, errors.NewValidationError(s.client.Language, "amount", s.client.I18n(errors.KeyMinPayoutAmountIDR))
 	}
 
 	// Generate signature: transaction_id + player_username + amount + account_number + secret_key
@@ -191,7 +192,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		return nil, err
 	}
 
-	s.client.Logger().Info("IDR payout created",
+	s.client.Logger().Info(s.client.I18n(i18n.LogIDRPayoutCreated),
 		"transactionID", req.TransactionID,
 		"payoutID", result.IDRPayoutID,
 		"status", result.Status,
@@ -202,7 +203,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 
 // GetStatus retrieves the current status of an IDR payout.
 func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRStatusResponse, error) {
-	s.client.Logger().Debug("querying IDR payout status", "transactionID", transactionID)
+	s.client.Logger().Debug(s.client.I18n(i18n.LogQueryingIDRPayoutStatus), "transactionID", transactionID)
 
 	endpoint := fmt.Sprintf(constants.GetEndpoint(constants.EndpointPayoutIDRStatus), s.client.AuthKey)
 	resp, err := s.client.Get(ctx, endpoint, map[string]string{
@@ -217,7 +218,7 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 		return nil, err
 	}
 
-	s.client.Logger().Info("IDR payout status retrieved",
+	s.client.Logger().Info(s.client.I18n(i18n.LogIDRPayoutStatusRetrieved),
 		"transactionID", result.TransactionID,
 		"status", result.Status,
 		"payoutID", result.IDRPayoutID,
@@ -234,41 +235,40 @@ func (s *IDRService) GetStatus(ctx context.Context, transactionID string) (*IDRS
 // Formula: MD5(id + account_number + amount + transaction_id + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10000.00").
 func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, receivedSignature string) error {
-	s.client.Logger().Debug("verifying IDR payout signature",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogVerifyingIDRPayoutSig),
 		"payoutID", id,
 		"transactionID", transactionID,
 		"accountNumber", s.client.LogAccountNumber(accountNumber),
 		"amount", amount,
 	)
 
-	lang := errors.Language(s.client.Language)
 
 	// Check required fields
 	if id == "" {
-		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "id")
-		return errors.New(lang, errors.ErrMissingCallbackField, "id")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMissing), "field", "id")
+		return s.client.Error(errors.ErrMissingCallbackField, "id")
 	}
 	if accountNumber == "" {
-		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "account_number")
-		return errors.New(lang, errors.ErrMissingCallbackField, "account_number")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMissing), "field", "account_number")
+		return s.client.Error(errors.ErrMissingCallbackField, "account_number")
 	}
 	if amount == "" {
-		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "amount")
-		return errors.New(lang, errors.ErrMissingCallbackField, "amount")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMissing), "field", "amount")
+		return s.client.Error(errors.ErrMissingCallbackField, "amount")
 	}
 	if transactionID == "" {
-		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "transaction_id")
-		return errors.New(lang, errors.ErrMissingCallbackField, "transaction_id")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMissing), "field", "transaction_id")
+		return s.client.Error(errors.ErrMissingCallbackField, "transaction_id")
 	}
 	if receivedSignature == "" {
-		s.client.Logger().Warn("IDR payout signature verification failed: missing field", "field", "signature")
-		return errors.New(lang, errors.ErrMissingCallbackField, "signature")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMissing), "field", "signature")
+		return s.client.Error(errors.ErrMissingCallbackField, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	formattedAmount, err := amountfmt.Format(amount, s.client.Language)
 	if err != nil {
-		s.client.Logger().Warn("IDR payout signature verification failed: invalid amount format",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedFormat),
 			"amount", amount,
 			"error", err.Error(),
 		)
@@ -288,14 +288,14 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
-		s.client.Logger().Warn("IDR payout signature verification failed: signature mismatch",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutSigFailedMismatch),
 			"payoutID", id,
 			"transactionID", transactionID,
 		)
-		return errors.New(lang, errors.ErrInvalidSignature)
+		return s.client.Error(errors.ErrInvalidSignature)
 	}
 
-	s.client.Logger().Debug("IDR payout signature verified",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogIDRPayoutSigVerified),
 		"payoutID", id,
 		"transactionID", transactionID,
 	)
@@ -329,7 +329,7 @@ func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
 // verify that the source IP is in the whitelist before verifying the signature.
 // If no whitelist was configured, IP verification is skipped.
 func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string) error {
-	s.client.Logger().Debug("verifying IDR payout callback",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogVerifyingIDRPayoutCallback),
 		"transactionID", callback.TransactionID,
 		"payoutID", callback.IDRPayoutID,
 		"sourceIP", sourceIP,
@@ -337,7 +337,7 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
-		s.client.Logger().Warn("IDR payout callback IP verification failed",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogIDRPayoutCallbackIPFailed),
 			"sourceIP", sourceIP,
 			"error", err.Error(),
 		)
@@ -349,7 +349,7 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 		return err
 	}
 
-	s.client.Logger().Info("IDR payout callback verified",
+	s.client.Logger().Info(s.client.I18n(i18n.LogIDRPayoutCallbackVerified),
 		"transactionID", callback.TransactionID,
 		"payoutID", callback.IDRPayoutID,
 		"completed", callback.Completed,
