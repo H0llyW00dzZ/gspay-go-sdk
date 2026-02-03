@@ -103,6 +103,7 @@ const (
 	MsgRequestFailed        = i18n.MsgRequestFailed
 	MsgIPNotWhitelisted     = i18n.MsgIPNotWhitelisted
 	MsgInvalidIPAddress     = i18n.MsgInvalidIPAddress
+	MsgRateLimited          = i18n.MsgRateLimited
 
 	// Validation error message keys
 	KeyMinAmountIDR        = i18n.MsgMinAmountIDR
