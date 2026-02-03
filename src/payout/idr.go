@@ -24,7 +24,6 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	amountfmt "github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/amount"
-	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
 )
 
 // IDRRequest represents a request to create an IDR payout (withdrawal).
@@ -141,8 +140,8 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		"username", req.Username,
 		"amount", req.Amount,
 		"bankCode", req.BankCode,
-		"accountName", sanitize.AccountName(req.AccountName),
-		"accountNumber", sanitize.AccountNumber(req.AccountNumber),
+		"accountName", s.client.LogAccountName(req.AccountName),
+		"accountNumber", s.client.LogAccountNumber(req.AccountNumber),
 	)
 
 	// Validate bank code
@@ -238,7 +237,7 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 	s.client.Logger().Debug("verifying IDR payout signature",
 		"payoutID", id,
 		"transactionID", transactionID,
-		"accountNumber", sanitize.AccountNumber(accountNumber),
+		"accountNumber", s.client.LogAccountNumber(accountNumber),
 		"amount", amount,
 	)
 
@@ -345,12 +344,8 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 		return err
 	}
 
-	// Then verify signature
+	// Then verify signature (VerifySignature handles failure logging)
 	if err := s.VerifyCallback(callback); err != nil {
-		s.client.Logger().Warn("IDR payout callback signature verification failed",
-			"transactionID", callback.TransactionID,
-			"error", err.Error(),
-		)
 		return err
 	}
 

@@ -242,12 +242,8 @@ func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP stri
 		return err
 	}
 
-	// Then verify signature
+	// Then verify signature (VerifySignature handles failure logging)
 	if err := s.VerifyCallback(callback); err != nil {
-		s.client.Logger().Warn("USDT callback signature verification failed",
-			"transactionID", callback.TransactionID,
-			"error", err.Error(),
-		)
 		return err
 	}
 

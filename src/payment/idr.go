@@ -363,12 +363,8 @@ func (s *IDRService) VerifyCallbackWithIP(callback *IDRCallback, sourceIP string
 		return err
 	}
 
-	// Then verify signature
+	// Then verify signature (VerifySignature handles failure logging)
 	if err := s.VerifyCallback(callback); err != nil {
-		s.client.Logger().Warn("IDR callback signature verification failed",
-			"transactionID", callback.TransactionID,
-			"error", err.Error(),
-		)
 		return err
 	}
 
