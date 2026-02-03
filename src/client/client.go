@@ -144,8 +144,13 @@ func WithCallbackIPWhitelist(ips ...string) Option {
 	}
 }
 
-// WithLanguage sets the language for SDK error messages.
-// Default is English. Supported languages: English, Indonesian.
+// WithLanguage sets the language for localized SDK messages.
+// This affects error messages, log messages, and the output of
+// [Client.I18n] and [Client.Error] methods.
+//
+// Default is [i18n.English]. Supported languages:
+//   - [i18n.English] - English (default)
+//   - [i18n.Indonesian] - Indonesian (Bahasa Indonesia)
 //
 // Example:
 //
