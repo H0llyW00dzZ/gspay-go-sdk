@@ -320,29 +320,14 @@ func (s *IDRService) VerifyStatusSignature(status *IDRStatusResponse) error {
 // This method only verifies the signature. To also verify the source IP,
 // use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
-	s.client.Logger().Debug("verifying IDR callback signature",
-		"paymentID", callback.IDRPaymentID,
-		"transactionID", callback.TransactionID,
-		"amount", callback.Amount,
-		"status", callback.Status,
-	)
-
-	if err := s.VerifySignature(
+	// Delegate to VerifySignature which handles all logging
+	return s.VerifySignature(
 		string(callback.IDRPaymentID),
 		string(callback.Amount),
 		callback.TransactionID,
 		callback.Status,
 		callback.Signature,
-	); err != nil {
-		return err
-	}
-
-	s.client.Logger().Info("IDR callback signature verified",
-		"paymentID", callback.IDRPaymentID,
-		"transactionID", callback.TransactionID,
-		"status", callback.Status,
 	)
-	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of an IDR payment callback.

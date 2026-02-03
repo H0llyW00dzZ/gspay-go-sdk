@@ -211,18 +211,10 @@ type SlogAdapter struct {
     logger *slog.Logger
 }
 
-func (a *SlogAdapter) Log(level logger.Level, msg string, args ...any) {
-    switch level {
-    case logger.LevelDebug:
-        a.logger.Debug(msg, args...)
-    case logger.LevelInfo:
-        a.logger.Info(msg, args...)
-    case logger.LevelWarn:
-        a.logger.Warn(msg, args...)
-    case logger.LevelError:
-        a.logger.Error(msg, args...)
-    }
-}
+func (a *SlogAdapter) Debug(msg string, args ...any) { a.logger.Debug(msg, args...) }
+func (a *SlogAdapter) Info(msg string, args ...any)  { a.logger.Info(msg, args...) }
+func (a *SlogAdapter) Warn(msg string, args ...any)  { a.logger.Warn(msg, args...) }
+func (a *SlogAdapter) Error(msg string, args ...any) { a.logger.Error(msg, args...) }
 
 // Use with client
 c := client.New("auth-key", "secret-key",

@@ -24,6 +24,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	amountfmt "github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/amount"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/sanitize"
 )
 
 // IDRRequest represents a request to create an IDR payout (withdrawal).
@@ -140,7 +141,8 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 		"username", req.Username,
 		"amount", req.Amount,
 		"bankCode", req.BankCode,
-		"accountNumber", req.AccountNumber,
+		"accountName", sanitize.AccountName(req.AccountName),
+		"accountNumber", sanitize.AccountNumber(req.AccountNumber),
 	)
 
 	// Validate bank code
@@ -236,7 +238,7 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 	s.client.Logger().Debug("verifying IDR payout signature",
 		"payoutID", id,
 		"transactionID", transactionID,
-		"accountNumber", accountNumber,
+		"accountNumber", sanitize.AccountNumber(accountNumber),
 		"amount", amount,
 	)
 
@@ -309,30 +311,14 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 // This method only verifies the signature. To also verify the source IP,
 // use [IDRService.VerifyCallbackWithIP] instead.
 func (s *IDRService) VerifyCallback(callback *IDRCallback) error {
-	s.client.Logger().Debug("verifying IDR payout callback signature",
-		"payoutID", callback.IDRPayoutID,
-		"transactionID", callback.TransactionID,
-		"accountNumber", callback.AccountNumber,
-		"amount", callback.Amount,
-	)
-
-	if err := s.VerifySignature(
+	// Delegate to VerifySignature which handles all logging
+	return s.VerifySignature(
 		string(callback.IDRPayoutID),
 		callback.AccountNumber,
 		string(callback.Amount),
 		callback.TransactionID,
 		callback.Signature,
-	); err != nil {
-		return err
-	}
-
-	s.client.Logger().Info("IDR payout callback signature verified",
-		"payoutID", callback.IDRPayoutID,
-		"transactionID", callback.TransactionID,
-		"completed", callback.Completed,
-		"success", callback.PayoutSuccess,
 	)
-	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of an IDR payout callback.

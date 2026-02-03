@@ -208,29 +208,14 @@ func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID str
 // This method only verifies the signature. To also verify the source IP,
 // use [USDTService.VerifyCallbackWithIP] instead.
 func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
-	s.client.Logger().Debug("verifying USDT callback signature",
-		"paymentID", callback.CryptoPaymentID,
-		"transactionID", callback.TransactionID,
-		"amount", callback.Amount,
-		"status", callback.Status,
-	)
-
-	if err := s.VerifySignature(
+	// Delegate to VerifySignature which handles all logging
+	return s.VerifySignature(
 		callback.CryptoPaymentID,
 		callback.Amount,
 		callback.TransactionID,
 		callback.Status,
 		callback.Signature,
-	); err != nil {
-		return err
-	}
-
-	s.client.Logger().Info("USDT callback signature verified",
-		"paymentID", callback.CryptoPaymentID,
-		"transactionID", callback.TransactionID,
-		"status", callback.Status,
 	)
-	return nil
 }
 
 // VerifyCallbackWithIP verifies both the signature and source IP of a USDT payment callback.
