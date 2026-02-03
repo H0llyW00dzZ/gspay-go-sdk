@@ -204,6 +204,13 @@ type requestParams struct {
 	Attempt  int
 }
 
+// retryParams holds the parameters for request execution with retry logic.
+type retryParams struct {
+	requestParams
+	// BodyBuffer is the original body buffer for resetting on retry.
+	BodyBuffer gc.Buffer
+}
+
 // performRequest executes a single HTTP request attempt.
 func (c *Client) performRequest(ctx context.Context, params requestParams) (*Response, bool, error) {
 	req, err := c.createHTTPRequest(ctx, params.Method, params.FullURL, params.Body, params.HasBody)
@@ -245,7 +252,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 }
 
 // executeWithRetry executes the HTTP request with retry logic.
-func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, reqBody io.Reader, reqBuf gc.Buffer, hasBody bool, endpoint string) (*Response, error) {
+func (c *Client) executeWithRetry(ctx context.Context, params retryParams) (*Response, error) {
 	var lastErr error
 	var actualAttempts int
 	for attempt := 0; attempt <= c.Retries; attempt++ {
@@ -253,7 +260,7 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		if attempt > 0 {
 			// Log retry attempt
 			c.logger.Warn("retrying request",
-				"endpoint", c.LogEndpoint(endpoint),
+				"endpoint", c.LogEndpoint(params.Endpoint),
 				"attempt", attempt,
 				"maxRetries", c.Retries,
 			)
@@ -264,19 +271,14 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 			}
 
 			// Reset body reader for retry
-			if hasBody {
-				reqBody = bytes.NewReader(reqBuf.Bytes())
+			if params.HasBody {
+				params.Body = bytes.NewReader(params.BodyBuffer.Bytes())
 			}
 		}
 
-		apiResp, retry, err := c.performRequest(ctx, requestParams{
-			Method:   method,
-			FullURL:  fullURL,
-			Endpoint: endpoint,
-			Body:     reqBody,
-			HasBody:  hasBody,
-			Attempt:  attempt,
-		})
+		// Update attempt number and call performRequest
+		params.Attempt = attempt
+		apiResp, retry, err := c.performRequest(ctx, params.requestParams)
 		if err == nil {
 			return apiResp, nil
 		}
@@ -285,7 +287,7 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		if retry && attempt < c.Retries {
 			// Log retryable error
 			c.logger.Warn("retryable error occurred",
-				"endpoint", c.LogEndpoint(endpoint),
+				"endpoint", c.LogEndpoint(params.Endpoint),
 				"attempt", attempt,
 				"error", err.Error(),
 			)
@@ -330,7 +332,16 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, body an
 	}
 	defer cleanup()
 
-	return c.executeWithRetry(ctx, method, fullURL, reqBody, reqBuf, hasBody, endpoint)
+	return c.executeWithRetry(ctx, retryParams{
+		requestParams: requestParams{
+			Method:   method,
+			FullURL:  fullURL,
+			Endpoint: endpoint,
+			Body:     reqBody,
+			HasBody:  hasBody,
+		},
+		BodyBuffer: reqBuf,
+	})
 }
 
 // Post performs a POST request.
