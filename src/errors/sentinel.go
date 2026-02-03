@@ -21,28 +21,28 @@ import (
 )
 
 // Sentinel errors for common error conditions.
-// These use i18n for their default English messages.
+// These are opaque identifiers - use errors.New() to get localized messages.
 var (
 	// ErrInvalidTransactionID is returned when the transaction ID is invalid.
-	ErrInvalidTransactionID = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidTransactionID))
+	ErrInvalidTransactionID = errors.New("ErrInvalidTransactionID")
 	// ErrInvalidAmount is returned when the payment amount is invalid.
-	ErrInvalidAmount = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidAmount))
+	ErrInvalidAmount = errors.New("ErrInvalidAmount")
 	// ErrInvalidBankCode is returned when the bank code is not recognized.
-	ErrInvalidBankCode = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidBankCode))
+	ErrInvalidBankCode = errors.New("ErrInvalidBankCode")
 	// ErrInvalidSignature is returned when signature verification fails.
-	ErrInvalidSignature = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidSignature))
+	ErrInvalidSignature = errors.New("ErrInvalidSignature")
 	// ErrMissingCallbackField is returned when a required callback field is missing.
-	ErrMissingCallbackField = errors.New(i18n.Get(i18n.English, i18n.MsgMissingCallbackField))
+	ErrMissingCallbackField = errors.New("ErrMissingCallbackField")
 	// ErrEmptyResponse is returned when the API returns an empty response.
-	ErrEmptyResponse = errors.New(i18n.Get(i18n.English, i18n.MsgEmptyResponse))
+	ErrEmptyResponse = errors.New("ErrEmptyResponse")
 	// ErrInvalidJSON is returned when the API response is not valid JSON.
-	ErrInvalidJSON = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidJSON))
+	ErrInvalidJSON = errors.New("ErrInvalidJSON")
 	// ErrRequestFailed is returned when the HTTP request fails.
-	ErrRequestFailed = errors.New(i18n.Get(i18n.English, i18n.MsgRequestFailed))
+	ErrRequestFailed = errors.New("ErrRequestFailed")
 	// ErrIPNotWhitelisted is returned when the callback IP is not in the whitelist.
-	ErrIPNotWhitelisted = errors.New(i18n.Get(i18n.English, i18n.MsgIPNotWhitelisted))
+	ErrIPNotWhitelisted = errors.New("ErrIPNotWhitelisted")
 	// ErrInvalidIPAddress is returned when the IP address format is invalid.
-	ErrInvalidIPAddress = errors.New(i18n.Get(i18n.English, i18n.MsgInvalidIPAddress))
+	ErrInvalidIPAddress = errors.New("ErrInvalidIPAddress")
 )
 
 // sentinelMessages maps sentinel errors to their message keys.

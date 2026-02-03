@@ -22,6 +22,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/constants"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/errors"
 	amountfmt "github.com/H0llyW00dzZ/gspay-go-sdk/src/helper/amount"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
 // USDTRequest represents a request to create a USDT payment.
@@ -80,7 +81,7 @@ func NewUSDTService(c *client.Client) *USDTService {
 //
 // Signature formula: MD5(transaction_id + player_username + amount + operator_secret_key)
 func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTResponse, error) {
-	s.client.Logger().Info("creating USDT payment",
+	s.client.Logger().Info(s.client.I18n(i18n.LogCreatingUSDTPayment),
 		"transactionID", req.TransactionID,
 		"username", req.Username,
 		"amount", req.Amount,
@@ -88,7 +89,7 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 
 	// Validate amount (minimum 1.00 USDT)
 	if req.Amount < constants.MinAmountUSDT {
-		return nil, errors.NewValidationError(s.client.Language, "amount", errors.GetMessage(s.client.Language, errors.KeyMinAmountUSDT))
+		return nil, errors.NewValidationError(s.client.Language, "amount", s.client.I18n(errors.KeyMinAmountUSDT))
 	}
 
 	// Format amount with 2 decimal places
@@ -122,7 +123,7 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 		return nil, err
 	}
 
-	s.client.Logger().Info("USDT payment created",
+	s.client.Logger().Info(s.client.I18n(i18n.LogUSDTPaymentCreated),
 		"transactionID", req.TransactionID, // Response doesn't include transactionID, so use request's
 		"paymentID", result.CryptoPaymentID,
 	)
@@ -138,37 +139,36 @@ func (s *USDTService) Create(ctx context.Context, req *USDTRequest) (*USDTRespon
 // Formula: MD5(cryptopayment_id + amount + transaction_id + status + operator_secret_key)
 // Note: Amount should be formatted with 2 decimal places (e.g., "10.50").
 func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID string, status constants.PaymentStatus, receivedSignature string) error {
-	s.client.Logger().Debug("verifying USDT payment signature",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogVerifyingUSDTSignature),
 		"paymentID", cryptoPaymentID,
 		"transactionID", transactionID,
 		"amount", amount,
 		"status", status,
 	)
 
-	lang := errors.Language(s.client.Language)
 
 	// Check required fields
 	if cryptoPaymentID == "" {
-		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "cryptopayment_id")
-		return errors.New(lang, errors.ErrMissingCallbackField, "cryptopayment_id")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMissing), "field", "cryptopayment_id")
+		return s.client.Error(errors.ErrMissingCallbackField, "cryptopayment_id")
 	}
 	if amount == "" {
-		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "amount")
-		return errors.New(lang, errors.ErrMissingCallbackField, "amount")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMissing), "field", "amount")
+		return s.client.Error(errors.ErrMissingCallbackField, "amount")
 	}
 	if transactionID == "" {
-		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "transaction_id")
-		return errors.New(lang, errors.ErrMissingCallbackField, "transaction_id")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMissing), "field", "transaction_id")
+		return s.client.Error(errors.ErrMissingCallbackField, "transaction_id")
 	}
 	if receivedSignature == "" {
-		s.client.Logger().Warn("USDT signature verification failed: missing field", "field", "signature")
-		return errors.New(lang, errors.ErrMissingCallbackField, "signature")
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMissing), "field", "signature")
+		return s.client.Error(errors.ErrMissingCallbackField, "signature")
 	}
 
 	// Format amount with 2 decimal places
 	formattedAmount, err := amountfmt.Format(amount, s.client.Language)
 	if err != nil {
-		s.client.Logger().Warn("USDT signature verification failed: invalid amount format",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedFormat),
 			"amount", amount,
 			"error", err.Error(),
 		)
@@ -187,14 +187,14 @@ func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID str
 
 	// Constant-time comparison to prevent timing attacks
 	if !s.client.VerifySignature(expectedSignature, receivedSignature) {
-		s.client.Logger().Warn("USDT signature verification failed: signature mismatch",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMismatch),
 			"paymentID", cryptoPaymentID,
 			"transactionID", transactionID,
 		)
-		return errors.New(lang, errors.ErrInvalidSignature)
+		return s.client.Error(errors.ErrInvalidSignature)
 	}
 
-	s.client.Logger().Debug("USDT payment signature verified",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogUSDTSignatureVerified),
 		"paymentID", cryptoPaymentID,
 		"transactionID", transactionID,
 	)
@@ -227,7 +227,7 @@ func (s *USDTService) VerifyCallback(callback *USDTCallback) error {
 // verify that the source IP is in the whitelist before verifying the signature.
 // If no whitelist was configured, IP verification is skipped.
 func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP string) error {
-	s.client.Logger().Debug("verifying USDT callback",
+	s.client.Logger().Debug(s.client.I18n(i18n.LogVerifyingUSDTCallback),
 		"transactionID", callback.TransactionID,
 		"paymentID", callback.CryptoPaymentID,
 		"sourceIP", sourceIP,
@@ -235,7 +235,7 @@ func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP stri
 
 	// Verify IP first (fast fail)
 	if err := s.client.VerifyCallbackIP(sourceIP); err != nil {
-		s.client.Logger().Warn("USDT callback IP verification failed",
+		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTCallbackIPFailed),
 			"sourceIP", sourceIP,
 			"error", err.Error(),
 		)
@@ -247,7 +247,7 @@ func (s *USDTService) VerifyCallbackWithIP(callback *USDTCallback, sourceIP stri
 		return err
 	}
 
-	s.client.Logger().Info("USDT callback verified",
+	s.client.Logger().Info(s.client.I18n(i18n.LogUSDTCallbackVerified),
 		"transactionID", callback.TransactionID,
 		"paymentID", callback.CryptoPaymentID,
 		"status", callback.Status,

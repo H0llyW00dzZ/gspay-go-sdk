@@ -25,14 +25,15 @@ import (
 func TestNew(t *testing.T) {
 	t.Run("wraps sentinel with English message", func(t *testing.T) {
 		err := New(i18n.English, ErrInvalidTransactionID)
-		assert.Equal(t, "transaction ID must be 5-20 characters: transaction ID must be 5-20 characters", err.Error())
+		// Opaque sentinel with localized message prefix
+		assert.Equal(t, "transaction ID must be 5-20 characters: ErrInvalidTransactionID", err.Error())
 		assert.True(t, errors.Is(err, ErrInvalidTransactionID))
 	})
 
 	t.Run("wraps sentinel with Indonesian message", func(t *testing.T) {
 		err := New(i18n.Indonesian, ErrInvalidTransactionID)
-		// The outer message is localized (Indonesian), the inner sentinel is fixed (English default)
-		assert.Equal(t, "ID transaksi harus 5-20 karakter: transaction ID must be 5-20 characters", err.Error())
+		// Opaque sentinel with localized message prefix
+		assert.Equal(t, "ID transaksi harus 5-20 karakter: ErrInvalidTransactionID", err.Error())
 		assert.True(t, errors.Is(err, ErrInvalidTransactionID))
 	})
 
@@ -73,7 +74,7 @@ func TestNew(t *testing.T) {
 	t.Run("wraps sentinel with context string", func(t *testing.T) {
 		err := New(i18n.English, ErrMissingCallbackField, "signature")
 
-		assert.Equal(t, "missing required callback field: signature: missing required callback field", err.Error())
+		assert.Equal(t, "missing required callback field: signature: ErrMissingCallbackField", err.Error())
 		assert.True(t, errors.Is(err, ErrMissingCallbackField))
 	})
 

@@ -192,6 +192,18 @@ func (c *Client) Logger() logger.Handler {
 	return c.logger
 }
 
+// I18n returns the localized message for the given key using the client's language setting.
+// This is a convenience method for i18n support in logging and error messages.
+func (c *Client) I18n(key i18n.MessageKey) string {
+	return i18n.Get(c.Language, key)
+}
+
+// Error creates a localized error wrapping the provided sentinel error.
+// This is a convenience method that uses the client's language setting.
+func (c *Client) Error(sentinel error, args ...any) error {
+	return errors.New(c.Language, sentinel, args...)
+}
+
 // New creates a new GSPAY2 API client.
 //
 // Parameters:
@@ -313,12 +325,12 @@ func (c *Client) VerifyCallbackIP(ipStr string) error {
 
 	// Validate IP format
 	if net.ParseIP(host) == nil {
-		return errors.New(c.Language, errors.ErrInvalidIPAddress)
+		return c.Error(errors.ErrInvalidIPAddress)
 	}
 
 	// Check whitelist
 	if !c.IsIPWhitelisted(ipStr) {
-		return errors.New(c.Language, errors.ErrIPNotWhitelisted)
+		return c.Error(errors.ErrIPNotWhitelisted)
 	}
 
 	return nil

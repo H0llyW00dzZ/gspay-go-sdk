@@ -119,7 +119,7 @@ c := client.New(
 
 ## Language Support (i18n)
 
-The SDK supports localized error messages. Currently supported: **English** (default) and **Indonesian**.
+The SDK supports localized error messages and log messages. Currently supported: **English** (default) and **Indonesian**.
 
 ```go
 import (
@@ -127,13 +127,18 @@ import (
     "github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
 )
 
-// Use Indonesian error messages
+// Use Indonesian for errors and log messages
 c := client.New("auth-key", "secret-key",
     client.WithLanguage(i18n.Indonesian),
+    client.WithDebug(true), // Enable logging to see localized messages
 )
 
 // Now validation errors will be in Indonesian:
 // "jumlah minimum adalah 10000 IDR" instead of "minimum amount is 10000 IDR"
+
+// Log messages will also be in Indonesian:
+// "membuat pembayaran IDR" instead of "creating IDR payment"
+// "permintaan berhasil diselesaikan" instead of "request completed successfully"
 ```
 
 ## Logging

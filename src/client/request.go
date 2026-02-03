@@ -129,7 +129,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		apiErr := &errors.APIError{
 			Code:        resp.StatusCode,
-			Message:     fmt.Sprintf("HTTP Error: %d", resp.StatusCode),
+			Message:     fmt.Sprintf(c.I18n(i18n.MsgHTTPError), resp.StatusCode),
 			Endpoint:    endpoint,
 			RawResponse: string(respBuf.Bytes()),
 			Lang:        c.Language,
@@ -140,7 +140,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
 
 		// Log error
-		c.logger.Error("HTTP error response",
+		c.logger.Error(c.I18n(i18n.LogHTTPErrorResponse),
 			"endpoint", c.LogEndpoint(endpoint),
 			"statusCode", resp.StatusCode,
 			"retryable", retry,
@@ -167,7 +167,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	}
 
 	// Debug logging
-	c.logger.Debug("API response received",
+	c.logger.Debug(c.I18n(i18n.LogAPIResponseReceived),
 		"endpoint", c.LogEndpoint(endpoint),
 		"status", resp.StatusCode,
 		"body", string(respBuf.Bytes()),
@@ -219,7 +219,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	}
 
 	// Log outgoing request
-	c.logger.Debug("sending request",
+	c.logger.Debug(c.I18n(i18n.LogSendingRequest),
 		"method", params.Method,
 		"endpoint", c.LogEndpoint(params.Endpoint),
 		"attempt", params.Attempt,
@@ -228,7 +228,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		// Log error
-		c.logger.Error("request failed",
+		c.logger.Error(c.I18n(i18n.LogRequestFailed),
 			"endpoint", c.LogEndpoint(params.Endpoint),
 			"attempt", params.Attempt,
 			"error", err.Error(),
@@ -243,7 +243,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	}
 
 	// Log success
-	c.logger.Info("request completed successfully",
+	c.logger.Info(c.I18n(i18n.LogRequestCompleted),
 		"endpoint", c.LogEndpoint(params.Endpoint),
 		"attempts", params.Attempt+1,
 	)
@@ -259,7 +259,7 @@ func (c *Client) executeWithRetry(ctx context.Context, params retryParams) (*Res
 		actualAttempts = attempt
 		if attempt > 0 {
 			// Log retry attempt
-			c.logger.Warn("retrying request",
+			c.logger.Warn(c.I18n(i18n.LogRetryingRequest),
 				"endpoint", c.LogEndpoint(params.Endpoint),
 				"attempt", attempt,
 				"maxRetries", c.Retries,
@@ -286,7 +286,7 @@ func (c *Client) executeWithRetry(ctx context.Context, params retryParams) (*Res
 		lastErr = err
 		if retry && attempt < c.Retries {
 			// Log retryable error
-			c.logger.Warn("retryable error occurred",
+			c.logger.Warn(c.I18n(i18n.LogRetryableError),
 				"endpoint", c.LogEndpoint(params.Endpoint),
 				"attempt", attempt,
 				"error", err.Error(),
@@ -297,9 +297,9 @@ func (c *Client) executeWithRetry(ctx context.Context, params retryParams) (*Res
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
+		return nil, fmt.Errorf(c.I18n(i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
 	}
-	return nil, fmt.Errorf(i18n.Get(c.Language, i18n.MsgRequestFailedAfterRetries), actualAttempts)
+	return nil, fmt.Errorf(c.I18n(i18n.MsgRequestFailedAfterRetries), actualAttempts)
 }
 
 // waitBackoff calculates the backoff duration and waits.

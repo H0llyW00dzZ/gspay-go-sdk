@@ -106,7 +106,9 @@ var defaultTimeout = 30 * time.Second // camelCase for internal variables
 
 ### Internationalization (i18n)
 
-When adding user-facing error messages:
+The SDK supports localized error messages **and log messages**. When adding user-facing messages:
+
+#### Adding Error Messages
 
 1. **Add message key** in `src/i18n/messages.go`:
    ```go
@@ -138,6 +140,45 @@ When adding user-facing error messages:
    // src/errors/errors.go
    const KeyNewError = i18n.MsgNewErrorKey
    ```
+
+#### Adding Log Messages
+
+1. **Add log message key** in `src/i18n/messages.go`:
+   ```go
+   const (
+       LogNewOperation MessageKey = "log_new_operation"
+   )
+   ```
+
+2. **Add translations** for all supported languages:
+   ```go
+   var translations = map[Language]map[MessageKey]string{
+       English: {
+           LogNewOperation: "performing new operation",
+       },
+       Indonesian: {
+           LogNewOperation: "melakukan operasi baru",
+       },
+   }
+   ```
+
+3. **Use the client's I18n helper** in service code:
+   ```go
+   // In service methods, use s.client.I18n() for log messages
+   s.client.Logger().Info(s.client.I18n(i18n.LogNewOperation),
+       "key", "value",
+   )
+   
+   // In client methods, use c.I18n() directly
+   c.logger.Debug(c.I18n(i18n.LogSendingRequest),
+       "endpoint", c.LogEndpoint(endpoint),
+   )
+   ```
+
+#### Message Key Naming Conventions
+
+- **Error messages**: Prefix with `Msg` (e.g., `MsgInvalidAmount`, `MsgRequestFailed`)
+- **Log messages**: Prefix with `Log` (e.g., `LogCreatingIDRPayment`, `LogRequestCompleted`)
 
 ### Logging
 
