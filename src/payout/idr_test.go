@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
@@ -27,6 +28,45 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockLogger captures log calls for testing service-level logging.
+type mockLogger struct {
+	DebugCalls []logCall
+	InfoCalls  []logCall
+	WarnCalls  []logCall
+	ErrorCalls []logCall
+}
+
+type logCall struct {
+	Msg           string
+	KeysAndValues []any
+}
+
+func (m *mockLogger) Debug(msg string, keysAndValues ...any) {
+	m.DebugCalls = append(m.DebugCalls, logCall{Msg: msg, KeysAndValues: keysAndValues})
+}
+
+func (m *mockLogger) Info(msg string, keysAndValues ...any) {
+	m.InfoCalls = append(m.InfoCalls, logCall{Msg: msg, KeysAndValues: keysAndValues})
+}
+
+func (m *mockLogger) Warn(msg string, keysAndValues ...any) {
+	m.WarnCalls = append(m.WarnCalls, logCall{Msg: msg, KeysAndValues: keysAndValues})
+}
+
+func (m *mockLogger) Error(msg string, keysAndValues ...any) {
+	m.ErrorCalls = append(m.ErrorCalls, logCall{Msg: msg, KeysAndValues: keysAndValues})
+}
+
+// containsKeyValue checks if a log call contains a specific key-value pair.
+func (c logCall) containsKeyValue(key string, value any) bool {
+	for i := 0; i < len(c.KeysAndValues)-1; i += 2 {
+		if c.KeysAndValues[i] == key && c.KeysAndValues[i+1] == value {
+			return true
+		}
+	}
+	return false
+}
 
 func TestIDRService_Create(t *testing.T) {
 	t.Run("creates payout successfully", func(t *testing.T) {
@@ -364,5 +404,102 @@ func TestIDRService_VerifyCallbackWithIP(t *testing.T) {
 
 		err := svc.VerifyCallbackWithIP(callback, "any.ip")
 		assert.NoError(t, err)
+	})
+}
+
+func TestIDRService_Logging(t *testing.T) {
+	t.Run("Create logs with sanitized account info", func(t *testing.T) {
+		mock := &mockLogger{}
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]any{
+				"code":    200,
+				"message": "success",
+				"data":    `{"idrpayout_id":123,"status":0}`,
+			})
+		}))
+		defer server.Close()
+
+		c := client.New("auth-key", "secret-key",
+			client.WithBaseURL(server.URL),
+			client.WithLogger(mock),
+		)
+		svc := NewIDRService(c)
+
+		_, err := svc.Create(t.Context(), &IDRRequest{
+			TransactionID: "TXN123456789",
+			Username:      "user123",
+			AccountName:   "John Doe",
+			AccountNumber: "1234567890",
+			Amount:        50000,
+			BankCode:      "BCA",
+		})
+		require.NoError(t, err)
+
+		// Verify service-level info log was called
+		foundCreateLog := false
+		for _, call := range mock.InfoCalls {
+			if strings.Contains(call.Msg, "creating IDR payout") {
+				foundCreateLog = true
+				// Verify account number is sanitized (should be ****7890)
+				for i := 0; i < len(call.KeysAndValues)-1; i += 2 {
+					if call.KeysAndValues[i] == "accountNumber" {
+						assert.Equal(t, "****7890", call.KeysAndValues[i+1], "account number should be sanitized")
+					}
+					if call.KeysAndValues[i] == "accountName" {
+						assert.Equal(t, "J*** D***", call.KeysAndValues[i+1], "account name should be sanitized")
+					}
+				}
+				break
+			}
+		}
+		assert.True(t, foundCreateLog, "expected 'creating IDR payout' log")
+	})
+
+	t.Run("VerifySignature logs with sanitized account number", func(t *testing.T) {
+		mock := &mockLogger{}
+
+		c := client.New("auth-key", "secret-key", client.WithLogger(mock))
+		svc := NewIDRService(c)
+
+		// Call with invalid signature (will fail, but we just want to check logging)
+		_ = svc.VerifySignature("123", "9876543210", "50000.00", "TXN123", "invalid-sig")
+
+		// Verify debug log contains sanitized account number
+		foundVerifyLog := false
+		for _, call := range mock.DebugCalls {
+			if strings.Contains(call.Msg, "verifying IDR payout signature") {
+				foundVerifyLog = true
+				for i := 0; i < len(call.KeysAndValues)-1; i += 2 {
+					if call.KeysAndValues[i] == "accountNumber" {
+						assert.Equal(t, "****3210", call.KeysAndValues[i+1], "account number should be sanitized")
+					}
+				}
+				break
+			}
+		}
+		assert.True(t, foundVerifyLog, "expected 'verifying IDR payout signature' debug log")
+	})
+
+	t.Run("VerifySignature logs warning on failure", func(t *testing.T) {
+		mock := &mockLogger{}
+
+		c := client.New("auth-key", "secret-key", client.WithLogger(mock))
+		svc := NewIDRService(c)
+
+		// Call with missing field
+		err := svc.VerifySignature("", "1234567890", "50000.00", "TXN123", "sig")
+		assert.Error(t, err)
+
+		// Verify warning log for missing field
+		foundWarnLog := false
+		for _, call := range mock.WarnCalls {
+			if strings.Contains(call.Msg, "missing field") {
+				foundWarnLog = true
+				break
+			}
+		}
+		assert.True(t, foundWarnLog, "expected warning log for missing field")
 	})
 }

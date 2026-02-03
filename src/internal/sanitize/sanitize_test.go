@@ -95,3 +95,130 @@ func TestEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestAccountNumber(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "masks standard account number",
+			input:    "1234567890",
+			expected: "****7890",
+		},
+		{
+			name:     "masks long account number",
+			input:    "12345678901234567890",
+			expected: "****7890",
+		},
+		{
+			name:     "masks exactly 5 digit account",
+			input:    "12345",
+			expected: "****2345",
+		},
+		{
+			name:     "fully masks 4 digit account",
+			input:    "1234",
+			expected: "****",
+		},
+		{
+			name:     "fully masks 3 digit account",
+			input:    "123",
+			expected: "****",
+		},
+		{
+			name:     "fully masks 1 digit account",
+			input:    "1",
+			expected: "****",
+		},
+		{
+			name:     "handles empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "handles account with letters",
+			input:    "ABC1234567890",
+			expected: "****7890",
+		},
+		{
+			name:     "handles unicode characters",
+			input:    "日本語1234567890",
+			expected: "****7890",
+		},
+		{
+			name:     "handles account with dashes",
+			input:    "123-456-7890",
+			expected: "****7890",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := AccountNumber(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestAccountName(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "masks two word name",
+			input:    "John Doe",
+			expected: "J*** D***",
+		},
+		{
+			name:     "masks single word name",
+			input:    "Alice",
+			expected: "A***",
+		},
+		{
+			name:     "masks three word name",
+			input:    "John Middle Doe",
+			expected: "J*** M*** D***",
+		},
+		{
+			name:     "handles empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "handles whitespace only",
+			input:    "   ",
+			expected: "",
+		},
+		{
+			name:     "handles single character name",
+			input:    "A",
+			expected: "A***",
+		},
+		{
+			name:     "handles unicode names",
+			input:    "日本 太郎",
+			expected: "日*** 太***",
+		},
+		{
+			name:     "handles name with extra spaces",
+			input:    "John   Doe",
+			expected: "J*** D***",
+		},
+		{
+			name:     "handles lowercase name",
+			input:    "john doe",
+			expected: "j*** d***",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := AccountName(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}

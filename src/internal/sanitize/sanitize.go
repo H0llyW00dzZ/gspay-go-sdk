@@ -14,7 +14,10 @@
 
 package sanitize
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // Endpoint redacts sensitive information like auth keys from endpoint URLs.
 //
@@ -41,4 +44,71 @@ func Endpoint(endpoint string) string {
 		}
 	}
 	return endpoint
+}
+
+// AccountNumber masks an account number for safe logging, showing only the last 4 digits.
+//
+// This function handles various account number formats:
+//   - Short numbers (≤4 chars): Returns fully masked "****"
+//   - Standard numbers: Returns "****" + last 4 digits
+//   - Empty string: Returns empty string
+//
+// Example:
+//
+//	sanitize.AccountNumber("1234567890")
+//	// Returns: "****7890"
+//
+//	sanitize.AccountNumber("123")
+//	// Returns: "****"
+func AccountNumber(accountNumber string) string {
+	if accountNumber == "" {
+		return ""
+	}
+
+	// Count runes for proper Unicode handling
+	runeCount := utf8.RuneCountInString(accountNumber)
+
+	// For short account numbers, return fully masked
+	if runeCount <= 4 {
+		return "****"
+	}
+
+	// Get last 4 characters (runes)
+	runes := []rune(accountNumber)
+	return "****" + string(runes[runeCount-4:])
+}
+
+// AccountName masks an account name for safe logging, showing only initials.
+//
+// This function handles various name formats:
+//   - Single word: Returns first character + "***" (e.g., "John" -> "J***")
+//   - Multiple words: Returns first char of each word (e.g., "John Doe" -> "J*** D***")
+//   - Empty string: Returns empty string
+//
+// Example:
+//
+//	sanitize.AccountName("John Doe")
+//	// Returns: "J*** D***"
+//
+//	sanitize.AccountName("Alice")
+//	// Returns: "A***"
+func AccountName(accountName string) string {
+	if accountName == "" {
+		return ""
+	}
+
+	words := strings.Fields(accountName)
+	if len(words) == 0 {
+		return ""
+	}
+
+	masked := make([]string, len(words))
+	for i, word := range words {
+		runes := []rune(word)
+		if len(runes) > 0 {
+			masked[i] = string(runes[0]) + "***"
+		}
+	}
+
+	return strings.Join(masked, " ")
 }
