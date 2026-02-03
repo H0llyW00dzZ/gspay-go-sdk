@@ -42,6 +42,36 @@ type Response struct {
 // IsSuccess checks if the API response indicates success.
 func (r *Response) IsSuccess() bool { return r.Code == 200 }
 
+// logEndpoint returns the endpoint for logging, sanitized unless debug mode is enabled.
+func (c *Client) logEndpoint(endpoint string) string {
+	if c.Debug {
+		return endpoint
+	}
+	return sanitize.Endpoint(endpoint)
+}
+
+// LogAccountNumber returns the account number for logging, sanitized unless debug mode is enabled.
+//
+// In debug mode, the full account number is returned for troubleshooting.
+// In production mode, only the last 4 digits are shown (e.g., "****7890").
+func (c *Client) LogAccountNumber(accountNumber string) string {
+	if c.Debug {
+		return accountNumber
+	}
+	return sanitize.AccountNumber(accountNumber)
+}
+
+// LogAccountName returns the account name for logging, sanitized unless debug mode is enabled.
+//
+// In debug mode, the full account name is returned for troubleshooting.
+// In production mode, only initials are shown (e.g., "J*** D***").
+func (c *Client) LogAccountName(accountName string) string {
+	if c.Debug {
+		return accountName
+	}
+	return sanitize.AccountName(accountName)
+}
+
 // prepareRequestBody prepares the request body for HTTP requests.
 func (c *Client) prepareRequestBody(body any) (io.Reader, gc.Buffer, func(), error) {
 	if body == nil {
@@ -107,12 +137,8 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
 
 		// Log error
-		logEndpoint := endpoint
-		if !c.Debug {
-			logEndpoint = sanitize.Endpoint(endpoint)
-		}
 		c.logger.Error("HTTP error response",
-			"endpoint", logEndpoint,
+			"endpoint", c.logEndpoint(endpoint),
 			"statusCode", resp.StatusCode,
 			"retryable", retry,
 		)
@@ -138,12 +164,8 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 	}
 
 	// Debug logging
-	debugEndpoint := endpoint
-	if !c.Debug {
-		debugEndpoint = sanitize.Endpoint(endpoint)
-	}
 	c.logger.Debug("API response received",
-		"endpoint", debugEndpoint,
+		"endpoint", c.logEndpoint(endpoint),
 		"status", resp.StatusCode,
 		"body", string(respBuf.Bytes()),
 	)
@@ -187,25 +209,17 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	}
 
 	// Log outgoing request
-	debugEndpoint := params.Endpoint
-	if !c.Debug {
-		debugEndpoint = sanitize.Endpoint(params.Endpoint)
-	}
 	c.logger.Debug("sending request",
 		"method", params.Method,
-		"endpoint", debugEndpoint,
+		"endpoint", c.logEndpoint(params.Endpoint),
 		"attempt", params.Attempt,
 	)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		// Log error
-		logEndpoint := params.Endpoint
-		if !c.Debug {
-			logEndpoint = sanitize.Endpoint(params.Endpoint)
-		}
 		c.logger.Error("request failed",
-			"endpoint", logEndpoint,
+			"endpoint", c.logEndpoint(params.Endpoint),
 			"attempt", params.Attempt,
 			"error", err.Error(),
 		)
@@ -219,12 +233,8 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	}
 
 	// Log success
-	logEndpoint := params.Endpoint
-	if !c.Debug {
-		logEndpoint = sanitize.Endpoint(params.Endpoint)
-	}
 	c.logger.Info("request completed successfully",
-		"endpoint", logEndpoint,
+		"endpoint", c.logEndpoint(params.Endpoint),
 		"attempts", params.Attempt+1,
 	)
 
@@ -239,12 +249,8 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		actualAttempts = attempt
 		if attempt > 0 {
 			// Log retry attempt
-			logEndpoint := endpoint
-			if !c.Debug {
-				logEndpoint = sanitize.Endpoint(endpoint)
-			}
 			c.logger.Warn("retrying request",
-				"endpoint", logEndpoint,
+				"endpoint", c.logEndpoint(endpoint),
 				"attempt", attempt,
 				"maxRetries", c.Retries,
 			)
@@ -275,12 +281,8 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		lastErr = err
 		if retry && attempt < c.Retries {
 			// Log retryable error
-			logEndpoint := endpoint
-			if !c.Debug {
-				logEndpoint = sanitize.Endpoint(endpoint)
-			}
 			c.logger.Warn("retryable error occurred",
-				"endpoint", logEndpoint,
+				"endpoint", c.logEndpoint(endpoint),
 				"attempt", attempt,
 				"error", err.Error(),
 			)
