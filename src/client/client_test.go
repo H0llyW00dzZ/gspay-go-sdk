@@ -360,3 +360,47 @@ func TestVerifyCallbackIP(t *testing.T) {
 		assert.ErrorIs(t, err, errors.ErrIPNotWhitelisted)
 	})
 }
+
+func TestLogAccountNumber(t *testing.T) {
+	t.Run("debug mode shows full account number", func(t *testing.T) {
+		c := New("auth", "secret", WithDebug(true))
+		assert.Equal(t, "1234567890", c.LogAccountNumber("1234567890"))
+	})
+
+	t.Run("production mode sanitizes account number", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "****7890", c.LogAccountNumber("1234567890"))
+	})
+
+	t.Run("handles short account numbers", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "****", c.LogAccountNumber("123"))
+	})
+
+	t.Run("handles empty account number", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "", c.LogAccountNumber(""))
+	})
+}
+
+func TestLogAccountName(t *testing.T) {
+	t.Run("debug mode shows full account name", func(t *testing.T) {
+		c := New("auth", "secret", WithDebug(true))
+		assert.Equal(t, "John Doe", c.LogAccountName("John Doe"))
+	})
+
+	t.Run("production mode sanitizes account name", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "J*** D***", c.LogAccountName("John Doe"))
+	})
+
+	t.Run("handles single word name", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "A***", c.LogAccountName("Alice"))
+	})
+
+	t.Run("handles empty account name", func(t *testing.T) {
+		c := New("auth", "secret")
+		assert.Equal(t, "", c.LogAccountName(""))
+	})
+}

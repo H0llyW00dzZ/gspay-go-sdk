@@ -52,28 +52,28 @@ func Default() *Std {
 	return NewStd(os.Stderr, LevelDebug)
 }
 
-// Debug implements [Logger.Debug].
+// Debug implements [Handler.Debug].
 func (l *Std) Debug(msg string, keysAndValues ...any) {
 	if l.level <= LevelDebug {
 		l.log("DEBUG", msg, keysAndValues...)
 	}
 }
 
-// Info implements [Logger.Info].
+// Info implements [Handler.Info].
 func (l *Std) Info(msg string, keysAndValues ...any) {
 	if l.level <= LevelInfo {
 		l.log("INFO", msg, keysAndValues...)
 	}
 }
 
-// Warn implements [Logger.Warn].
+// Warn implements [Handler.Warn].
 func (l *Std) Warn(msg string, keysAndValues ...any) {
 	if l.level <= LevelWarn {
 		l.log("WARN", msg, keysAndValues...)
 	}
 }
 
-// Error implements [Logger.Error].
+// Error implements [Handler.Error].
 func (l *Std) Error(msg string, keysAndValues ...any) {
 	if l.level <= LevelError {
 		l.log("ERROR", msg, keysAndValues...)
