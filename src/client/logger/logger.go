@@ -60,3 +60,21 @@ const (
 	// LevelNone disables all logging.
 	LevelNone
 )
+
+// String returns the string representation of the log level.
+func (l Level) String() string {
+	switch l {
+	case LevelDebug:
+		return "DEBUG"
+	case LevelInfo:
+		return "INFO"
+	case LevelWarn:
+		return "WARN"
+	case LevelError:
+		return "ERROR"
+	case LevelNone:
+		return "NONE"
+	default:
+		return "UNKNOWN"
+	}
+}

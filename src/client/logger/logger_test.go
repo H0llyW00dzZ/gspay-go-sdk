@@ -128,3 +128,23 @@ func TestFormatKeyValues(t *testing.T) {
 		})
 	}
 }
+
+func TestLevel_String(t *testing.T) {
+	tests := []struct {
+		level    Level
+		expected string
+	}{
+		{LevelDebug, "DEBUG"},
+		{LevelInfo, "INFO"},
+		{LevelWarn, "WARN"},
+		{LevelError, "ERROR"},
+		{LevelNone, "NONE"},
+		{Level(99), "UNKNOWN"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.expected, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.level.String())
+		})
+	}
+}
