@@ -404,3 +404,23 @@ func TestLogAccountName(t *testing.T) {
 		assert.Equal(t, "", c.LogAccountName(""))
 	})
 }
+
+func TestLogEndpoint(t *testing.T) {
+	t.Run("debug mode shows full endpoint", func(t *testing.T) {
+		c := New("auth", "secret", WithDebug(true))
+		endpoint := "/v2/integrations/operators/my-secret-key/idr/payment"
+		assert.Equal(t, endpoint, c.LogEndpoint(endpoint))
+	})
+
+	t.Run("production mode sanitizes endpoint", func(t *testing.T) {
+		c := New("auth", "secret")
+		endpoint := "/v2/integrations/operators/my-secret-key/idr/payment"
+		assert.Equal(t, "/v2/integrations/operators/[REDACTED]/idr/payment", c.LogEndpoint(endpoint))
+	})
+
+	t.Run("handles endpoint without auth key", func(t *testing.T) {
+		c := New("auth", "secret")
+		endpoint := "/v2/health"
+		assert.Equal(t, "/v2/health", c.LogEndpoint(endpoint))
+	})
+}

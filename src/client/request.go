@@ -42,8 +42,11 @@ type Response struct {
 // IsSuccess checks if the API response indicates success.
 func (r *Response) IsSuccess() bool { return r.Code == 200 }
 
-// logEndpoint returns the endpoint for logging, sanitized unless debug mode is enabled.
-func (c *Client) logEndpoint(endpoint string) string {
+// LogEndpoint returns the endpoint for logging, sanitized unless debug mode is enabled.
+//
+// In debug mode, the full endpoint (including auth keys) is returned for troubleshooting.
+// In production mode, auth keys are redacted (e.g., "/operators/[REDACTED]/idr/payment").
+func (c *Client) LogEndpoint(endpoint string) string {
 	if c.Debug {
 		return endpoint
 	}
@@ -138,7 +141,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 
 		// Log error
 		c.logger.Error("HTTP error response",
-			"endpoint", c.logEndpoint(endpoint),
+			"endpoint", c.LogEndpoint(endpoint),
 			"statusCode", resp.StatusCode,
 			"retryable", retry,
 		)
@@ -165,7 +168,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 
 	// Debug logging
 	c.logger.Debug("API response received",
-		"endpoint", c.logEndpoint(endpoint),
+		"endpoint", c.LogEndpoint(endpoint),
 		"status", resp.StatusCode,
 		"body", string(respBuf.Bytes()),
 	)
@@ -211,7 +214,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	// Log outgoing request
 	c.logger.Debug("sending request",
 		"method", params.Method,
-		"endpoint", c.logEndpoint(params.Endpoint),
+		"endpoint", c.LogEndpoint(params.Endpoint),
 		"attempt", params.Attempt,
 	)
 
@@ -219,7 +222,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 	if err != nil {
 		// Log error
 		c.logger.Error("request failed",
-			"endpoint", c.logEndpoint(params.Endpoint),
+			"endpoint", c.LogEndpoint(params.Endpoint),
 			"attempt", params.Attempt,
 			"error", err.Error(),
 		)
@@ -234,7 +237,7 @@ func (c *Client) performRequest(ctx context.Context, params requestParams) (*Res
 
 	// Log success
 	c.logger.Info("request completed successfully",
-		"endpoint", c.logEndpoint(params.Endpoint),
+		"endpoint", c.LogEndpoint(params.Endpoint),
 		"attempts", params.Attempt+1,
 	)
 
@@ -250,7 +253,7 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		if attempt > 0 {
 			// Log retry attempt
 			c.logger.Warn("retrying request",
-				"endpoint", c.logEndpoint(endpoint),
+				"endpoint", c.LogEndpoint(endpoint),
 				"attempt", attempt,
 				"maxRetries", c.Retries,
 			)
@@ -282,7 +285,7 @@ func (c *Client) executeWithRetry(ctx context.Context, method, fullURL string, r
 		if retry && attempt < c.Retries {
 			// Log retryable error
 			c.logger.Warn("retryable error occurred",
-				"endpoint", c.logEndpoint(endpoint),
+				"endpoint", c.LogEndpoint(endpoint),
 				"attempt", attempt,
 				"error", err.Error(),
 			)
