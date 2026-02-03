@@ -30,6 +30,7 @@ const (
 	MsgRequestFailed        MessageKey = "request_failed"
 	MsgIPNotWhitelisted     MessageKey = "ip_not_whitelisted"
 	MsgInvalidIPAddress     MessageKey = "invalid_ip_address"
+	MsgRateLimited          MessageKey = "rate_limited"
 
 	// Validation error messages.
 	MsgMinAmountIDR          MessageKey = "min_amount_idr"
@@ -116,6 +117,7 @@ var translations = map[Language]map[MessageKey]string{
 		MsgRequestFailed:        "request failed",
 		MsgIPNotWhitelisted:     "IP address not whitelisted",
 		MsgInvalidIPAddress:     "invalid IP address format",
+		MsgRateLimited:          "rate limited by API",
 
 		// Validation errors
 		MsgMinAmountIDR:          "minimum amount is 10000 IDR",
@@ -199,6 +201,7 @@ var translations = map[Language]map[MessageKey]string{
 		MsgRequestFailed:        "permintaan gagal",
 		MsgIPNotWhitelisted:     "alamat IP tidak ada dalam whitelist",
 		MsgInvalidIPAddress:     "format alamat IP tidak valid",
+		MsgRateLimited:          "dibatasi oleh API",
 
 		// Validation errors
 		MsgMinAmountIDR:          "jumlah minimum adalah 10000 IDR",

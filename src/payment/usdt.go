@@ -146,7 +146,6 @@ func (s *USDTService) VerifySignature(cryptoPaymentID, amount, transactionID str
 		"status", status,
 	)
 
-
 	// Check required fields
 	if cryptoPaymentID == "" {
 		s.client.Logger().Warn(s.client.I18n(i18n.LogUSDTSigVerifyFailedMissing), "field", "cryptopayment_id")

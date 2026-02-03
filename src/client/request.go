@@ -125,7 +125,7 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 		return nil, true, errors.New(c.Language, errors.ErrRequestFailed, err)
 	}
 
-	// Handle HTTP errors - retry on server errors (5xx) or 404
+	// Handle HTTP errors - retry on server errors (5xx), 404, or 429
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		apiErr := &errors.APIError{
 			Code:        resp.StatusCode,
@@ -134,10 +134,11 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 			RawResponse: string(respBuf.Bytes()),
 			Lang:        c.Language,
 		}
-		// Retry on 5xx server errors and 404s.
+		// Retry on 5xx server errors, 404s, and 429 (rate limit).
 		// Note: 404 is included because the GSPAY API may transiently return 404
 		// during service deployments or load balancer routing changes.
-		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404)
+		// 429 indicates rate limiting - retry with backoff.
+		retry := (resp.StatusCode >= 500 || resp.StatusCode == 404 || resp.StatusCode == 429)
 
 		// Log error
 		c.logger.Error(c.I18n(i18n.LogHTTPErrorResponse),
@@ -148,6 +149,12 @@ func (c *Client) processResponse(resp *http.Response, endpoint string) (*Respons
 
 		respBuf.Reset()
 		gc.Default.Put(respBuf)
+
+		// Return specific error for rate limiting
+		if resp.StatusCode == 429 {
+			return nil, retry, errors.New(c.Language, errors.ErrRateLimited)
+		}
+
 		return nil, retry, apiErr
 	}
 
@@ -296,10 +303,10 @@ func (c *Client) executeWithRetry(ctx context.Context, params retryParams) (*Res
 		break
 	}
 
-	if lastErr != nil {
-		return nil, fmt.Errorf(c.I18n(i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
-	}
-	return nil, fmt.Errorf(c.I18n(i18n.MsgRequestFailedAfterRetries), actualAttempts)
+	// lastErr is always non-nil here because:
+	// 1. The loop only exits via break when err != nil (line 296)
+	// 2. Successful requests return early (line 283)
+	return nil, fmt.Errorf(c.I18n(i18n.MsgRequestFailedAfterRetries)+": %w", actualAttempts, lastErr)
 }
 
 // waitBackoff calculates the backoff duration and waits.

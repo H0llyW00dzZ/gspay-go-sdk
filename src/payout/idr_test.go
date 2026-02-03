@@ -124,7 +124,10 @@ func TestIDRService_Create(t *testing.T) {
 		})
 
 		require.Error(t, err)
-		assert.ErrorIs(t, err, errors.ErrInvalidBankCode)
+		valErr := errors.GetValidationError(err)
+		require.NotNil(t, valErr, "expected ValidationError for invalid bank code")
+		assert.Equal(t, "bank_code", valErr.Field)
+		assert.Contains(t, valErr.Message, "INVALID")
 	})
 
 	t.Run("validates minimum amount", func(t *testing.T) {

@@ -43,6 +43,8 @@ var (
 	ErrIPNotWhitelisted = errors.New("ErrIPNotWhitelisted")
 	// ErrInvalidIPAddress is returned when the IP address format is invalid.
 	ErrInvalidIPAddress = errors.New("ErrInvalidIPAddress")
+	// ErrRateLimited is returned when the API returns HTTP 429 Too Many Requests.
+	ErrRateLimited = errors.New("ErrRateLimited")
 )
 
 // sentinelMessages maps sentinel errors to their message keys.
@@ -57,4 +59,5 @@ var sentinelMessages = map[error]i18n.MessageKey{
 	ErrRequestFailed:        MsgRequestFailed,
 	ErrIPNotWhitelisted:     MsgIPNotWhitelisted,
 	ErrInvalidIPAddress:     MsgInvalidIPAddress,
+	ErrRateLimited:          MsgRateLimited,
 }

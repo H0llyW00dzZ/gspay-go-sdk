@@ -43,32 +43,26 @@ func TestNew(t *testing.T) {
 
 		assert.Contains(t, err.Error(), "request failed")
 		assert.Contains(t, err.Error(), "connection reset")
-		// errors.Is uses unwrapping. Since our New() wraps using %w twice (once for sentinel, once for cause),
-		// it should work.
-		// baseErr := fmt.Errorf("%s: %w", msg, sentinel) -> wraps sentinel
-		// return fmt.Errorf("%w: %v", baseErr, cause) -> wraps baseErr
 
-		// So err -> baseErr -> sentinel
-		// But cause is only in formatted string (%v), not wrapped (%w) in the outer error?
-		// Wait, the implementation is: return fmt.Errorf("%w: %v", baseErr, cause)
-		// This wraps baseErr. baseErr wraps sentinel.
-		// So `errors.Is(err, sentinel)` works.
-
-		// BUT `errors.Is(err, originalErr)` will FAIL because `cause` is passed as `%v` (value), not `%w` (wrapped error).
-		// We need to fix the implementation in errors.go if we want to unwrap the cause too.
-		// However, standard `fmt.Errorf` only allows one `%w`.
-		// If we want both searchable, we might need a custom join error or choose one to wrap.
-		// Since `sentinel` is the "identity", we must wrap it.
-		// If we want to check the cause, we usually check the string or use a custom struct.
-
-		// Let's check what the requirement implies. "support original error from other package"
-		// usually means preserving it for debugging (printing).
-		// If we want to support `errors.Is(err, originalErr)`, we need Go 1.20+ `errors.Join`.
-
-		// For now, let's assume we just want to preserve the error message of the cause.
-		// Adjusting the test expectation:
+		// The implementation uses multiple %w verbs (Go 1.20+) to wrap both the sentinel and cause.
+		// This allows errors.Is() to work with both the sentinel and the original cause.
+		// Format: fmt.Errorf("%s: %w: %w", msg, sentinel, cause)
 		assert.True(t, errors.Is(err, ErrRequestFailed))
-		// assert.True(t, errors.Is(err, originalErr)) // This expects unwrapping support for cause
+		assert.True(t, errors.Is(err, originalErr))
+	})
+
+	t.Run("supports unwrapping both sentinel and cause", func(t *testing.T) {
+		// Verify that errors.Is works for both the sentinel and the wrapped cause
+		cause := errors.New("network timeout")
+		err := New(i18n.English, ErrInvalidJSON, cause)
+
+		// Both should be unwrappable via errors.Is
+		assert.True(t, errors.Is(err, ErrInvalidJSON), "should unwrap to sentinel")
+		assert.True(t, errors.Is(err, cause), "should unwrap to cause")
+
+		// Error message should contain both
+		assert.Contains(t, err.Error(), "invalid JSON response")
+		assert.Contains(t, err.Error(), "network timeout")
 	})
 
 	t.Run("wraps sentinel with context string", func(t *testing.T) {

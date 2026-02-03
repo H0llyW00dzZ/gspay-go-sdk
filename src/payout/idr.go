@@ -148,7 +148,7 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 	// Validate bank code
 	bankCode := strings.ToUpper(req.BankCode)
 	if !constants.IsValidBankIDR(bankCode) {
-		return nil, fmt.Errorf("%w: %s", errors.New(s.client.Language, errors.ErrInvalidBankCode), bankCode)
+		return nil, errors.NewValidationError(s.client.Language, "bank_code", bankCode+": "+s.client.I18n(errors.MsgInvalidBankCode))
 	}
 
 	// Validate amount (minimum 10000 IDR)
@@ -241,7 +241,6 @@ func (s *IDRService) VerifySignature(id, accountNumber, amount, transactionID, r
 		"accountNumber", s.client.LogAccountNumber(accountNumber),
 		"amount", amount,
 	)
-
 
 	// Check required fields
 	if id == "" {

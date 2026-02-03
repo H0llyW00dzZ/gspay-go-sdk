@@ -21,6 +21,22 @@ import (
 )
 
 // LocalizedError represents an error with language-specific messages.
+//
+// Use LocalizedError when you need a simple error with a translatable message
+// that doesn't require sentinel identity checking via errors.Is().
+//
+// For errors that need sentinel identity (errors.Is support), use the New()
+// function instead, which wraps sentinel errors with localized messages while
+// preserving error identity.
+//
+// Example usage:
+//
+//	// Simple localized error (no sentinel identity)
+//	err := errors.NewLocalizedError(i18n.English, i18n.MsgInvalidAmount)
+//
+//	// Sentinel-based localized error (supports errors.Is)
+//	err := errors.New(i18n.English, errors.ErrInvalidAmount)
+//	if errors.Is(err, errors.ErrInvalidAmount) { ... }
 type LocalizedError struct {
 	key  i18n.MessageKey
 	lang i18n.Language
