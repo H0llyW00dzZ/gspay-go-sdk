@@ -115,6 +115,8 @@ c := client.New(
 | `WithLanguage` | Mengatur bahasa untuk pesan error dan log | `i18n.English` |
 | `WithDebug` | Mengaktifkan logging debug ke stderr | `false` |
 | `WithLogger` | Mengatur structured logger kustom | `logger.Nop` (tanpa logging) |
+| `WithDigest` | Mengatur fungsi hash kustom untuk tanda tangan | `md5.New` (diperlukan GSPAY2) |
+| `WithCallbackIPWhitelist` | Mengatur IP yang diizinkan untuk verifikasi callback | Kosong (semua IP diizinkan) |
 
 ## Logging
 
