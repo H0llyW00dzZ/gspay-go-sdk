@@ -15,6 +15,9 @@
 package signature
 
 import (
+	"crypto/md5"
+	"crypto/sha256"
+	"crypto/sha512"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,5 +62,38 @@ func TestVerify(t *testing.T) {
 		assert.True(t, Verify("", ""))
 		assert.False(t, Verify("nonempty", ""))
 		assert.False(t, Verify("", "nonempty"))
+	})
+}
+
+func TestGenerateWithDigest(t *testing.T) {
+	t.Run("nil digest uses MD5", func(t *testing.T) {
+		data := "test data"
+		sig := GenerateWithDigest(data, nil)
+		// Should match standard Generate (MD5)
+		assert.Equal(t, Generate(data), sig)
+		assert.Equal(t, "eb733a00c0c9d336e65691a37ab54293", sig)
+	})
+
+	t.Run("custom SHA256 digest", func(t *testing.T) {
+		data := "hello"
+		sig := GenerateWithDigest(data, sha256.New)
+		// SHA-256 of "hello" (lowercase hex)
+		expected := "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+		assert.Equal(t, expected, sig)
+	})
+
+	t.Run("custom SHA512 digest", func(t *testing.T) {
+		data := "hello"
+		sig := GenerateWithDigest(data, sha512.New)
+		// SHA-512 of "hello" (lowercase hex, first 64 chars for verification)
+		assert.Len(t, sig, 128) // SHA-512 produces 128 hex characters
+		assert.Equal(t, "9b71d224bd62f3785d96d46ad3ea3d73", sig[:32])
+	})
+
+	t.Run("MD5 explicit digest", func(t *testing.T) {
+		data := "test"
+		sig := GenerateWithDigest(data, md5.New)
+		// Should match standard Generate
+		assert.Equal(t, Generate(data), sig)
 	})
 }

@@ -15,6 +15,9 @@
 package client
 
 import (
+	"crypto/md5"
+	"crypto/sha256"
+	"crypto/sha512"
 	"net/http"
 	"testing"
 	"time"
@@ -85,6 +88,50 @@ func TestGenerateSignature(t *testing.T) {
 	})
 
 	t.Run("generates consistent signatures", func(t *testing.T) {
+		sig1 := c.GenerateSignature("payment123user45000secret")
+		sig2 := c.GenerateSignature("payment123user45000secret")
+		assert.Equal(t, sig1, sig2)
+	})
+}
+
+func TestWithDigest(t *testing.T) {
+	t.Run("defaults to MD5 when no digest specified", func(t *testing.T) {
+		c := New("auth-key", "secret-key")
+		// MD5("test") = 098f6bcd4621d373cade4e832627b4f6
+		sig := c.GenerateSignature("test")
+		assert.Equal(t, "098f6bcd4621d373cade4e832627b4f6", sig)
+	})
+
+	t.Run("uses custom SHA-256 digest", func(t *testing.T) {
+		c := New("auth-key", "secret-key", WithDigest(sha256.New))
+		sig := c.GenerateSignature("hello")
+		// SHA-256 of "hello"
+		expected := "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+		assert.Equal(t, expected, sig)
+		assert.Len(t, sig, 64) // SHA-256 produces 64 hex characters
+	})
+
+	t.Run("uses custom SHA-512 digest", func(t *testing.T) {
+		c := New("auth-key", "secret-key", WithDigest(sha512.New))
+		sig := c.GenerateSignature("hello")
+		assert.Len(t, sig, 128) // SHA-512 produces 128 hex characters
+	})
+
+	t.Run("uses explicit MD5 digest", func(t *testing.T) {
+		c := New("auth-key", "secret-key", WithDigest(md5.New))
+		sig := c.GenerateSignature("test")
+		// Should match default behavior
+		assert.Equal(t, "098f6bcd4621d373cade4e832627b4f6", sig)
+	})
+
+	t.Run("nil digest defaults to MD5", func(t *testing.T) {
+		c := New("auth-key", "secret-key", WithDigest(nil))
+		sig := c.GenerateSignature("test")
+		assert.Equal(t, "098f6bcd4621d373cade4e832627b4f6", sig)
+	})
+
+	t.Run("generates consistent signatures with custom digest", func(t *testing.T) {
+		c := New("auth-key", "secret-key", WithDigest(sha256.New))
 		sig1 := c.GenerateSignature("payment123user45000secret")
 		sig2 := c.GenerateSignature("payment123user45000secret")
 		assert.Equal(t, sig1, sig2)

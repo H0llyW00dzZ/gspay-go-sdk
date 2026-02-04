@@ -21,6 +21,7 @@ import (
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/i18n"
+	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/signature"
 )
 
 // Option is a functional option for configuring the Client.
@@ -189,5 +190,31 @@ func WithLogger(l logger.Handler) Option {
 		} else {
 			c.logger = l
 		}
+	}
+}
+
+// WithDigest sets a custom hash function for signature generation.
+//
+// Note: The GSPAY2 API requires MD5 for signature verification.
+// This option is provided for flexibility in case the API adds support
+// for stronger algorithms, or for use with other compatible APIs.
+// If digest is nil, MD5 is used (default behavior for GSPAY2 compatibility).
+//
+// Standard library hash functions can be used directly:
+//   - crypto/md5.New (default, required by GSPAY2)
+//   - crypto/sha1.New
+//   - crypto/sha256.New
+//   - crypto/sha512.New
+//
+// Example:
+//
+//	// Use SHA-256 for signature generation (if API supports it)
+//	c := client.New("auth", "secret", client.WithDigest(sha256.New))
+//
+//	// Use SHA-512
+//	c := client.New("auth", "secret", client.WithDigest(sha512.New))
+func WithDigest(digest signature.Digest) Option {
+	return func(c *Client) {
+		c.digest = digest
 	}
 }
