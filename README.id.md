@@ -112,7 +112,7 @@ c := client.New(
 | `WithRetries` | Mengatur jumlah percobaan ulang | `3` |
 | `WithRetryWait` | Mengatur waktu tunggu min/maks antar retry | `500ms` / `2s` |
 | `WithHTTPClient` | Menggunakan HTTP client kustom | Default `http.Client` |
-| `WithLanguage` | Mengatur bahasa pesan error | `i18n.English` |
+| `WithLanguage` | Mengatur bahasa untuk pesan error dan log | `i18n.English` |
 | `WithDebug` | Mengaktifkan logging debug ke stderr | `false` |
 | `WithLogger` | Mengatur structured logger kustom | `logger.Nop` (tanpa logging) |
 
