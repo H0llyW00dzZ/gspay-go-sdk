@@ -14,4 +14,25 @@
 
 // Package sanitize provides utilities for sanitizing sensitive data
 // from strings before logging or displaying to users.
+//
+// This internal package ensures that sensitive information such as auth keys
+// and operator IDs are redacted from API endpoint URLs and error messages
+// to prevent accidental exposure in logs.
+//
+// # Usage
+//
+// The [Endpoint] function sanitizes API URLs:
+//
+//	url := "https://api.example.com/operator/ABC123/payment"
+//	sanitized := sanitize.Endpoint(url)
+//	// Returns: "https://api.example.com/operator/[REDACTED]/payment"
+//
+// # Redacted Patterns
+//
+// The following patterns are sanitized:
+//   - Auth keys in URL paths (e.g., /auth/{key}/...)
+//   - Operator IDs in URL paths (e.g., /operator/{id}/... or /operators/{id}/...)
+//   - Secret keys appearing in query strings
+//
+// All sensitive values are replaced with "[REDACTED]".
 package sanitize
