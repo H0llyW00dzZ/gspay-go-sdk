@@ -25,32 +25,54 @@ gspay-go-sdk/
 ├── go.mod                      # Module: github.com/H0llyW00dzZ/gspay-go-sdk
 ├── go.sum
 ├── README.md
+├── README.id.md                # Indonesian README
+├── AGENTS.md                   # AI agent guidelines
+├── CONTRIBUTING.md             # Contribution guidelines
+├── CONTRIBUTING.id.md          # Indonesian contribution guidelines
 ├── opencode.json               # AI agent configuration
-├── .github/instructions/       # AI agent instructions
+├── .agent/rules/               # AI agent rules (this directory)
 ├── src/
+│   ├── balance/                # Balance query service
+│   │   └── balance.go
 │   ├── client/                 # HTTP client and configuration
 │   │   ├── client.go          # Client struct, options pattern
-│   │   ├── request.go         # HTTP requests with retry logic
-│   │   └── helpers.go         # Utility functions
+│   │   ├── request.go         # HTTP requests with retry logic (with jitter)
+│   │   ├── helpers.go         # Utility functions
+│   │   ├── logger.go          # Logger interface integration
+│   │   └── logger/            # Structured logging subpackage
+│   │       ├── handler.go     # Handler interface definition
+│   │       ├── level.go       # Log levels (Debug, Info, Warn, Error)
+│   │       ├── nop.go         # No-op logger (default)
+│   │       └── std.go         # Standard library logger implementation
 │   ├── constants/              # Constants and enums
 │   │   ├── constants.go       # Base constants (URLs, limits)
 │   │   ├── status.go          # PaymentStatus type and methods
 │   │   ├── banks.go           # Bank codes (IDR, MYR, THB)
-│   │   └── channels.go        # Payment channels
-│   ├── errors/                 # Error types
-│   │   └── errors.go          # APIError, ValidationError
+│   │   ├── channels.go        # Payment channels
+│   │   ├── endpoints.go       # API endpoint paths
+│   │   ├── version.go         # SDK version constants
+│   │   └── docs.go            # Package documentation
+│   ├── errors/                 # Error types with i18n support
+│   │   ├── errors.go          # APIError, ValidationError, LocalizedError
+│   │   └── docs.go            # Package documentation
+│   ├── helper/                 # Shared utility packages
+│   │   ├── amount/            # Amount formatting (2 decimal places, i18n)
+│   │   └── gc/                # Garbage collection utilities (bytebufferpool)
+│   ├── i18n/                   # Internationalization support
+│   │   ├── language.go        # Language type and constants
+│   │   └── messages.go        # MessageKey and translations (EN, ID)
+│   ├── internal/               # Internal packages not exposed to users
+│   │   ├── sanitize/          # Endpoint URL sanitization (redacts auth keys)
+│   │   └── signature/         # MD5 signature generation and verification
 │   ├── payment/                # Payment services
 │   │   ├── idr.go             # IDR payment service
 │   │   └── usdt.go            # USDT payment service
-│   ├── payout/                 # Payout services
-│   │   └── idr.go             # IDR payout service
-│   ├── balance/                # Balance service
-│   │   └── balance.go
-│   └── internal/               # Internal packages
-│       └── signature/          # MD5 signature utilities
+│   └── payout/                 # Payout/Withdrawal services
+│       └── idr.go             # IDR payout service
 └── examples/                   # Usage examples
-    ├── basic/main.go
-    └── webhook/main.go
+    ├── basic/main.go          # Basic SDK usage
+    ├── logging/main.go        # Custom logger integration
+    └── webhook/main.go        # Webhook callback handling
 ```
 
 ## Code Style Guidelines
@@ -115,26 +137,30 @@ func (s *IDRService) Create(ctx context.Context, req *IDRRequest) (*IDRResponse,
 
 ### Error Handling
 
-Use typed errors from the `errors` package:
+Use typed errors from the `errors` package with i18n support:
 
 ```go
-// Return sentinel errors
-return nil, errors.ErrInvalidTransactionID
+// Return sentinel errors with localization
+return nil, errors.New(s.client.Language, errors.ErrInvalidTransactionID)
 
-// Return validation errors
-return nil, errors.NewValidationError("amount", "minimum amount is 10000 IDR")
+// Return validation errors with i18n message
+return nil, errors.NewValidationError("amount", 
+    i18n.GetMessage(s.client.Language, i18n.KeyMinAmountIDR))
 
 // Return API errors
 return nil, &errors.APIError{
     Code:    resp.StatusCode,
     Message: "HTTP Error",
 }
+
+// Check for API errors
+if apiErr := errors.GetAPIError(err); apiErr != nil { /* ... */ }
 ```
 
 When wrapping errors, use `errors.New` which automatically wraps causes with `%w`:
 
 ```go
-// Wrap with context and localization
+// Wrap with context and localized message (supports errors.Is/As)
 return errors.New(s.client.Language, errors.ErrRequestFailed, err)
 ```
 
@@ -264,6 +290,8 @@ MD5(cryptopayment_id + amount + transaction_id + status + secret_key)
 | Package | Purpose | Version |
 |---------|---------|---------|
 | `github.com/stretchr/testify` | Testing assertions | v1.11.1 |
+| `github.com/google/uuid` | UUID generation | v1.6.0 |
+| `github.com/valyala/bytebufferpool` | Memory-efficient byte buffer pooling | v1.0.0 |
 
 ## Build & Verify
 
