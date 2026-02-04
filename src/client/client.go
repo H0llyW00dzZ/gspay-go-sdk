@@ -60,6 +60,9 @@ type Client struct {
 	// logger is the structured logger for the client.
 	// Default is logger.Nop (no logging).
 	logger logger.Handler
+	// digest is the hash function for signature generation.
+	// Default is nil (uses MD5).
+	digest signature.Digest
 }
 
 // Logger returns the configured logger instance.
@@ -114,8 +117,11 @@ func New(authKey, secretKey string, opts ...Option) *Client {
 	return c
 }
 
-// GenerateSignature generates an MD5 signature for API requests.
-func (c *Client) GenerateSignature(data string) string { return signature.Generate(data) }
+// GenerateSignature generates a signature for API requests.
+// Uses the configured digest function, or MD5 if not set.
+func (c *Client) GenerateSignature(data string) string {
+	return signature.GenerateWithDigest(data, c.digest)
+}
 
 // VerifySignature verifies a callback signature.
 func (c *Client) VerifySignature(expected, actual string) bool {
