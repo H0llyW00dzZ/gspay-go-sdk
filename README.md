@@ -116,6 +116,8 @@ c := client.New(
 | `WithLanguage` | Set language for error and log messages | `i18n.English` |
 | `WithDebug` | Enable debug logging to stderr | `false` |
 | `WithLogger` | Set custom structured logger | `logger.Nop` (no logging) |
+| `WithDigest` | Set custom hash function for signatures | `md5.New` (required by GSPAY2) |
+| `WithCallbackIPWhitelist` | Set allowed IPs for callback verification | Empty (all IPs allowed) |
 
 ## Language Support (i18n)
 

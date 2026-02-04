@@ -38,6 +38,8 @@
 //   - [WithLanguage]: Set language for error and log messages
 //   - [WithDebug]: Enable debug logging to stderr
 //   - [WithLogger]: Set custom structured logger
+//   - [WithDigest]: Set custom hash function for signatures (default: MD5)
+//   - [WithCallbackIPWhitelist]: Set allowed IPs for callback verification
 //
 // # Retry Logic
 //
