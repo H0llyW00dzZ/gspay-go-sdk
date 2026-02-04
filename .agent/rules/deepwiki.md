@@ -8,13 +8,13 @@ This project has DeepWiki configured as an MCP server for accessing documentatio
 
 ## Available Tools
 
-### 1. `ask_question`
+### 1. `mcp_deepwiki_ask_question`
 
 Ask questions about Go packages, libraries, or programming concepts.
 
 **Parameters:**
 - `question` (string, required): The question to ask
-- `repo_name` (string, optional): Repository name in format `owner/repo` (e.g., `stretchr/testify`)
+- `repoName` (string, optional): Repository name in format `owner/repo` (e.g., `stretchr/testify`)
 
 **Example - General Question:**
 ```jsonc
@@ -27,37 +27,35 @@ Ask questions about Go packages, libraries, or programming concepts.
 ```jsonc
 {
   "question": "How do I use assert.Equal?",
-  "repo_name": "stretchr/testify"
+  "repoName": "stretchr/testify"
 }
 ```
 
-### 2. `read_wiki_structure`
+### 2. `mcp_deepwiki_read_wiki_structure`
 
 Get the documentation structure/outline for a repository.
 
 **Parameters:**
-- `repo_name` (string, required): Repository name in format `owner/repo`
+- `repoName` (string, required): Repository name in format `owner/repo`
 
 **Example:**
 ```jsonc
 {
-  "repo_name": "stretchr/testify"
+  "repoName": "stretchr/testify"
 }
 ```
 
-### 3. `read_wiki_contents`
+### 3. `mcp_deepwiki_read_wiki_contents`
 
-Read specific documentation content from a repository's wiki.
+Read documentation content from a repository's wiki.
 
 **Parameters:**
-- `repo_name` (string, required): Repository name in format `owner/repo`
-- `path` (string, required): Path to the documentation page
+- `repoName` (string, required): Repository name in format `owner/repo`
 
 **Example:**
 ```jsonc
 {
-  "repo_name": "stretchr/testify",
-  "path": "assert"
+  "repoName": "stretchr/testify"
 }
 ```
 
@@ -77,13 +75,13 @@ This project uses the following dependencies that can be queried:
 // Learn about testify assertions
 {
   "question": "What assertion methods are available in testify?",
-  "repo_name": "stretchr/testify"
+  "repoName": "stretchr/testify"
 }
 
 // Learn about mocking
 {
   "question": "How do I create mocks with testify?",
-  "repo_name": "stretchr/testify"
+  "repoName": "stretchr/testify"
 }
 ```
 
@@ -148,7 +146,7 @@ DeepWiki complements gopls:
 
 **Workflow Example:**
 ```
-1. Use gopls `go_file_context` to see dependencies
+1. Use gopls `mcp_gopls_go_file_context` to see dependencies
 2. If it's from a library, use DeepWiki to understand usage
-3. Use gopls `go_symbol_references` to see how it's used in your codebase
+3. Use gopls `mcp_gopls_go_symbol_references` to see how it's used in your codebase
 ```
