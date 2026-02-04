@@ -12,5 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package payout provides payout-related functionality for the GSPAY2 SDK.
+// Package payout provides payout (withdrawal) services for the GSPAY2 SDK.
+//
+// This package supports processing payouts to bank accounts and e-wallets
+// in various currencies.
+//
+// # IDR Payout Service
+//
+// Use [NewIDRService] to process IDR withdrawals:
+//
+//	c := client.New("auth-key", "secret-key")
+//	payoutSvc := payout.NewIDRService(c)
+//
+//	resp, err := payoutSvc.Create(ctx, &payout.IDRRequest{
+//	    TransactionID: client.GenerateTransactionID("PAY"),
+//	    Username:      "user123",
+//	    AccountName:   "John Doe",
+//	    AccountNumber: "1234567890",
+//	    Amount:        50000,
+//	    BankCode:      "BCA",
+//	    Description:   "Withdrawal request",
+//	})
+//
+// # Supported Banks
+//
+// Use constants.IsValidBankIDR to validate bank codes.
+// Common Indonesian banks include: BCA, BRI, MANDIRI, BNI, CIMB, etc.
+//
+// E-wallets are also supported: DANA, OVO.
+//
+// # Callback Verification
+//
+// Verify payout callbacks from GSPAY2:
+//
+//	if err := payoutSvc.VerifyCallback(&callback); err != nil {
+//	    // Invalid signature
+//	}
+//
+// For additional security, verify the callback source IP:
+//
+//	if err := payoutSvc.VerifyCallbackWithIP(&callback, clientIP); err != nil {
+//	    // Unauthorized IP or invalid signature
+//	}
+//
+// # Error Handling
+//
+// Common validation errors (from the SDK errors package):
+//   - ErrInvalidAccountNumber: Invalid bank account number
+//   - ErrInvalidBankCode: Unsupported bank code
+//   - ErrInvalidAmount: Amount below minimum or invalid
 package payout

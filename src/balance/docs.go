@@ -13,4 +13,31 @@
 // limitations under the License.
 
 // Package balance provides balance query functionality for the GSPAY2 SDK.
+//
+// This package allows merchants to check their settlement balance on the
+// GSPAY2 platform for managing funds and reconciliation.
+//
+// # Basic Usage
+//
+//	c := client.New("auth-key", "secret-key")
+//	balanceSvc := balance.NewService(c)
+//
+//	resp, err := balanceSvc.Get(ctx)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Printf("Balance: %s\n", resp.Balance)
+//
+// # Response
+//
+// The [Response] struct contains:
+//   - Balance: The current settlement balance as a string
+//
+// # Error Handling
+//
+// The Get method may return:
+//   - API errors (invalid credentials, server errors)
+//   - Network errors (timeout, connection issues)
+//
+// Use the SDK errors package GetAPIError function to handle API-specific errors.
 package balance

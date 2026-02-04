@@ -21,7 +21,7 @@
 // # Basic Usage
 //
 // The SDK defaults to [Nop] which discards all log messages.
-// To enable logging, use [client.WithLogger]:
+// To enable logging, use client.WithLogger:
 //
 //	import "github.com/H0llyW00dzZ/gspay-go-sdk/src/client/logger"
 //
