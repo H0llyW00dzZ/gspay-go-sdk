@@ -31,12 +31,6 @@ import (
 //   - crypto/sha512.New
 type Digest func() hash.Hash
 
-// Generate creates an MD5 signature (lowercase hex string).
-// This is a convenience function that uses MD5 as the digest.
-func Generate(data string) string {
-	return GenerateWithDigest(data, nil)
-}
-
 // GenerateWithDigest creates a signature using the specified digest function.
 // If digest is nil, MD5 is used as the default.
 func GenerateWithDigest(data string, digest Digest) string {
