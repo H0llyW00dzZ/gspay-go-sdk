@@ -201,10 +201,10 @@ func WithLogger(l logger.Handler) Option {
 // If digest is nil, MD5 is used (default behavior for GSPAY2 compatibility).
 //
 // Standard library hash functions can be used directly:
-//   - crypto/md5.New (default, required by GSPAY2)
-//   - crypto/sha1.New
-//   - crypto/sha256.New
-//   - crypto/sha512.New
+//   - [crypto/md5.New] (default, required by GSPAY2)
+//   - [crypto/sha1.New]
+//   - [crypto/sha256.New]
+//   - [crypto/sha512.New]
 //
 // Example:
 //

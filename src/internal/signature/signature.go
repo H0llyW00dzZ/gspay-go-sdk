@@ -25,10 +25,10 @@ import (
 // Use this type to provide custom digest algorithms.
 //
 // Standard library hash functions can be used directly:
-//   - crypto/md5.New (default)
-//   - crypto/sha1.New
-//   - crypto/sha256.New
-//   - crypto/sha512.New
+//   - [crypto/md5.New] (default)
+//   - [crypto/sha1.New]
+//   - [crypto/sha256.New]
+//   - [crypto/sha512.New]
 type Digest func() hash.Hash
 
 // GenerateWithDigest creates a signature using the specified digest function.
