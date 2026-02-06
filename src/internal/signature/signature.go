@@ -21,7 +21,7 @@ import (
 	"hash"
 )
 
-// Digest is a function that returns a new hash.Hash instance.
+// Digest is a function that returns a new [hash.Hash] instance.
 // Use this type to provide custom digest algorithms.
 //
 // Standard library hash functions can be used directly:
