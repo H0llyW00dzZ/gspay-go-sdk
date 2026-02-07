@@ -54,6 +54,16 @@ func WithBaseURL(baseURL string) Option {
 //	    },
 //	}
 //	c := client.New("auth", "secret", client.WithHTTPClient(customClient))
+//
+// For advanced use cases such as routing requests through a proxy:
+//
+//	proxyURL, _ := url.Parse("http://proxy.example.com:8080")
+//	customClient := &http.Client{
+//	    Transport: &http.Transport{
+//	        Proxy: http.ProxyURL(proxyURL),
+//	    },
+//	}
+//	c := client.New("auth", "secret", client.WithHTTPClient(customClient))
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.HTTPClient = httpClient
