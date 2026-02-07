@@ -32,12 +32,12 @@ on:
 
 jobs:
   coverage:
-    name: 🔢 Test Coverage on ${{ matrix.os }}
+    name: 🔢 Test Coverage on ${{ matrix.os }} (Go ${{ matrix.go-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-22.04, ubuntu-24.04-arm, ubuntu-22.04-arm, macos-latest, windows-latest, windows-2022, windows-11-arm]
-        go-version: ['1.25.6']
+        go-version: ['1.25.6', '1.25.7']
     
     steps:
     - name: Checkout code
