@@ -94,8 +94,11 @@ func WithRetries(retries int) Option {
 	}
 }
 
-// WithDebug enables debug logging of API requests and responses.
-// When enabled, automatically uses the default logger if no custom logger is set.
+// WithDebug enables debug mode for the client.
+//
+// When enabled, sensitive data (auth keys, account numbers, account names) is shown
+// unsanitized in log output, and a default logger is automatically used if no custom
+// logger is set.
 //
 // Example:
 //
