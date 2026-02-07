@@ -177,7 +177,7 @@ Summarizes the Go programming language workspace.
 
 For this GSPAY Go SDK project, commonly used paths:
 
-- Client: `src/client/client.go`, `src/client/option.go`, `src/client/request.go`
+- Client: `src/client/client.go`, `src/client/option.go`, `src/client/request.go`, `src/client/logger.go`
 - Constants: `src/constants/constants.go`, `src/constants/status.go`, `src/constants/banks.go`
 - Errors: `src/errors/errors.go`, `src/errors/api.go`, `src/errors/validation.go`, `src/errors/localized.go`, `src/errors/sentinel.go`
 - Payment: `src/payment/idr.go`, `src/payment/usdt.go`
