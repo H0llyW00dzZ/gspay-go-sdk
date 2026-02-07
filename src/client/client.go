@@ -54,7 +54,7 @@ type Client struct {
 	Debug bool
 	// parsedIPs contains parsed individual IP addresses.
 	parsedIPs []net.IP
-	// Language is the language for SDK error messages.
+	// Language is the language for SDK error and log messages.
 	// Default is English.
 	Language i18n.Language
 	// logger is the structured logger for the client.
