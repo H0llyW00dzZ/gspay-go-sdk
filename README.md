@@ -1,5 +1,6 @@
 # GSPAY Go SDK (Unofficial)
 
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.25.6-blue?logo=go)](https://go.dev/dl/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/H0llyW00dzZ/gspay-go-sdk.svg)](https://pkg.go.dev/github.com/H0llyW00dzZ/gspay-go-sdk)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/H0llyW00dzZ/gspay-go-sdk)](https://goreportcard.com/report/github.com/H0llyW00dzZ/gspay-go-sdk)
