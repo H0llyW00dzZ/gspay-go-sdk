@@ -23,7 +23,7 @@ This is an **unofficial** Go SDK for the GSPAY2 Payment Gateway API. It was inde
 ```
 gspay-go-sdk/
 ├── .agent/rules/               # AI agent rules (this directory)
-├── examples/                   # Usage examples (basic, logging, webhook)
+├── examples/                   # Usage examples (basic, logging, proxy, webhook)
 ├── src/
 │   ├── balance/                # Balance query service
 │   ├── client/                 # HTTP client, functional options, retry logic
@@ -84,6 +84,17 @@ package client
 - **Unexported types**: camelCase (e.g., `idrAPIRequest`)
 - **Constants**: PascalCase for exported, camelCase for unexported
 - **Errors**: Start with `Err` prefix (e.g., `ErrInvalidAmount`)
+
+### Logger Type Alias
+
+The `client` package exposes a `Logger` type alias for `logger.Handler`:
+
+```go
+// Logger is a type alias for logger.Handler.
+type Logger = logger.Handler
+```
+
+The `Client.Logger()` method returns this type, allowing services and other packages to share the same logger configuration.
 
 ### Service Pattern
 
