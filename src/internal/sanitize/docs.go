@@ -15,24 +15,32 @@
 // Package sanitize provides utilities for sanitizing sensitive data
 // from strings before logging or displaying to users.
 //
-// This internal package ensures that sensitive information such as auth keys
-// and operator IDs are redacted from API endpoint URLs and error messages
-// to prevent accidental exposure in logs.
+// This internal package ensures that sensitive information such as auth keys,
+// account numbers, and account names are redacted or masked to prevent
+// accidental exposure in logs.
 //
-// # Usage
+// # Endpoint Sanitization
 //
-// The [Endpoint] function sanitizes API URLs:
+// The [Endpoint] function redacts auth keys from GSPAY2 API endpoint URLs.
+// It handles both singular and plural operator path segments:
 //
-//	url := "https://api.example.com/operator/ABC123/payment"
-//	sanitized := sanitize.Endpoint(url)
-//	// Returns: "https://api.example.com/operator/[REDACTED]/payment"
+//	sanitize.Endpoint("/v2/integrations/operators/secret123/idr/payment")
+//	// Returns: "/v2/integrations/operators/[REDACTED]/idr/payment"
 //
-// # Redacted Patterns
+//	sanitize.Endpoint("/v2/integrations/operator/secret123/balance")
+//	// Returns: "/v2/integrations/operator/[REDACTED]/balance"
 //
-// The following patterns are sanitized:
-//   - Auth keys in URL paths (e.g., /auth/{key}/...)
-//   - Operator IDs in URL paths (e.g., /operator/{id}/... or /operators/{id}/...)
-//   - Secret keys appearing in query strings
+// # Account Data Masking
 //
-// All sensitive values are replaced with "[REDACTED]".
+// The [AccountNumber] function masks account numbers, showing only the last
+// 4 digits for identification while hiding the rest:
+//
+//	sanitize.AccountNumber("1234567890") // Returns: "****7890"
+//	sanitize.AccountNumber("123")        // Returns: "****"
+//
+// The [AccountName] function masks account holder names, showing only the
+// first character of each word:
+//
+//	sanitize.AccountName("John Doe") // Returns: "J*** D***"
+//	sanitize.AccountName("Alice")    // Returns: "A***"
 package sanitize
