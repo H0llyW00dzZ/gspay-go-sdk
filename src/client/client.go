@@ -62,7 +62,7 @@ type Client struct {
 	Language i18n.Language
 	// logger is the structured logger for the client.
 	// Default is logger.Nop (no logging).
-	logger logger.Handler
+	logger Logger
 	// digest is the hash function for signature generation.
 	// Default is nil (uses MD5).
 	digest signature.Digest
@@ -72,7 +72,7 @@ type Client struct {
 //
 // This allows services and other packages to use the same logger configuration
 // as the client for consistent logging across the SDK.
-func (c *Client) Logger() logger.Handler {
+func (c *Client) Logger() Logger {
 	return c.logger
 }
 
