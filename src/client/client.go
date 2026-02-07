@@ -49,8 +49,11 @@ type Client struct {
 	CallbackIPWhitelist []string
 	// parsedIPNets contains parsed CIDR networks for efficient IP checking.
 	parsedIPNets []*net.IPNet
-	// Debug enables debug logging of API requests and responses.
-	// When true and no custom logger is set, uses the default logger.
+	// Debug controls whether sensitive data is sanitized in log output.
+	//
+	// If Debug is true, raw values (auth keys, account numbers, account names) are shown in logs,
+	// and a default logger is used when no custom logger is set.
+	// If Debug is false (default), sensitive data is automatically redacted for safe logging.
 	Debug bool
 	// parsedIPs contains parsed individual IP addresses.
 	parsedIPs []net.IP
