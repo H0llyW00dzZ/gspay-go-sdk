@@ -366,7 +366,9 @@ paymentSvc := payment.NewIDRService(c)
 
 func handleCallback(w http.ResponseWriter, r *http.Request) {
     var callback payment.IDRCallback
-    if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+    decoder := json.NewDecoder(r.Body)
+    decoder.UseNumber()
+    if err := decoder.Decode(&callback); err != nil {
         http.Error(w, "Invalid request", http.StatusBadRequest)
         return
     }
@@ -401,7 +403,9 @@ payoutSvc := payout.NewIDRService(c)
 
 func handlePayoutCallback(w http.ResponseWriter, r *http.Request) {
     var callback payout.IDRCallback
-    if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+    decoder := json.NewDecoder(r.Body)
+    decoder.UseNumber()
+    if err := decoder.Decode(&callback); err != nil {
         http.Error(w, "Invalid request", http.StatusBadRequest)
         return
     }
