@@ -31,10 +31,10 @@
 //
 // The [Digest] type accepts any function that returns a [hash.Hash] instance,
 // making it compatible with all standard library hash functions:
-//   - crypto/md5.New (default)
-//   - crypto/sha1.New
-//   - crypto/sha256.New
-//   - crypto/sha512.New
+//   - [crypto/md5.New] (default)
+//   - [crypto/sha1.New]
+//   - [crypto/sha256.New]
+//   - [crypto/sha512.New]
 //
 // # Signature Formulas
 //
