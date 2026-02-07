@@ -72,7 +72,9 @@ func handlePaymentCallbackIDR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var callback payment.IDRCallback
-	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&callback); err != nil {
 		log.Printf("Failed to decode callback: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -122,7 +124,9 @@ func handlePayoutCallbackIDR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var callback payout.IDRCallback
-	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&callback); err != nil {
 		log.Printf("Failed to decode callback: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -159,7 +163,9 @@ func handlePaymentCallbackUSDT(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var callback payment.USDTCallback
-	if err := json.NewDecoder(r.Body).Decode(&callback); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.UseNumber()
+	if err := decoder.Decode(&callback); err != nil {
 		log.Printf("Failed to decode callback: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
