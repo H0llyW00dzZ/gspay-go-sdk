@@ -679,7 +679,7 @@ SDK saat ini mendukung pembayaran **Indonesia (IDR)**. Rilis mendatang akan mena
 - [ ] Tambahkan middleware verifikasi tanda tangan webhook
 - [ ] Implementasi polling status pembayaran dengan webhook
 - [ ] Tambahkan rate limiting dan request throttling
-- [ ] Dukungan untuk HTTP client kustom dan proxy
+- [x] Dukungan untuk HTTP client kustom dan proxy
 - [x] Tambahkan logging dan metrik yang komprehensif
 - [ ] Implementasi utilitas rekonsiliasi pembayaran
 - [ ] Tambahkan dukungan untuk refund parsial (jika didukung oleh API)
