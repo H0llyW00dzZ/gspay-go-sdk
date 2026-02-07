@@ -22,57 +22,28 @@ This is an **unofficial** Go SDK for the GSPAY2 Payment Gateway API. It was inde
 
 ```
 gspay-go-sdk/
-├── go.mod                      # Module: github.com/H0llyW00dzZ/gspay-go-sdk
-├── go.sum
-├── README.md
-├── README.id.md                # Indonesian README
-├── AGENTS.md                   # AI agent guidelines
-├── CONTRIBUTING.md             # Contribution guidelines
-├── CONTRIBUTING.id.md          # Indonesian contribution guidelines
-├── opencode.json               # AI agent configuration
 ├── .agent/rules/               # AI agent rules (this directory)
+├── examples/                   # Usage examples (basic, logging, webhook)
 ├── src/
 │   ├── balance/                # Balance query service
-│   │   └── balance.go
-│   ├── client/                 # HTTP client and configuration
-│   │   ├── client.go          # Client struct, options pattern
-│   │   ├── request.go         # HTTP requests with retry logic (with jitter)
-│   │   ├── helpers.go         # Utility functions
-│   │   ├── logger.go          # Logger interface integration
-│   │   └── logger/            # Structured logging subpackage
-│   │       ├── handler.go     # Handler interface definition
-│   │       ├── level.go       # Log levels (Debug, Info, Warn, Error)
-│   │       ├── nop.go         # No-op logger (default)
-│   │       └── std.go         # Standard library logger implementation
-│   ├── constants/              # Constants and enums
-│   │   ├── constants.go       # Base constants (URLs, limits)
-│   │   ├── status.go          # PaymentStatus type and methods
-│   │   ├── banks.go           # Bank codes (IDR, MYR, THB)
-│   │   ├── channels.go        # Payment channels
-│   │   ├── endpoints.go       # API endpoint paths
-│   │   ├── version.go         # SDK version constants
-│   │   └── docs.go            # Package documentation
-│   ├── errors/                 # Error types with i18n support
-│   │   ├── errors.go          # APIError, ValidationError, LocalizedError
-│   │   └── docs.go            # Package documentation
-│   ├── helper/                 # Shared utility packages
+│   ├── client/                 # HTTP client, functional options, retry logic
+│   │   └── logger/            # Structured logging (Handler interface, Nop, Std)
+│   ├── constants/              # Constants, enums, bank codes, endpoints, status types
+│   ├── errors/                 # Typed errors with i18n (API, Validation, Localized, Sentinel)
+│   ├── helper/
 │   │   ├── amount/            # Amount formatting (2 decimal places, i18n)
 │   │   └── gc/                # Garbage collection utilities (bytebufferpool)
-│   ├── i18n/                   # Internationalization support
-│   │   ├── language.go        # Language type and constants
-│   │   └── messages.go        # MessageKey and translations (EN, ID)
-│   ├── internal/               # Internal packages not exposed to users
+│   ├── i18n/                   # Internationalization (Language, MessageKey, translations)
+│   ├── internal/
 │   │   ├── sanitize/          # Endpoint URL sanitization (redacts auth keys)
 │   │   └── signature/         # MD5 signature generation and verification
-│   ├── payment/                # Payment services
-│   │   ├── idr.go             # IDR payment service
-│   │   └── usdt.go            # USDT payment service
-│   └── payout/                 # Payout/Withdrawal services
-│       └── idr.go             # IDR payout service
-└── examples/                   # Usage examples
-    ├── basic/main.go          # Basic SDK usage
-    ├── logging/main.go        # Custom logger integration
-    └── webhook/main.go        # Webhook callback handling
+│   ├── payment/                # Payment services (IDR, USDT)
+│   └── payout/                 # Payout/Withdrawal services (IDR)
+├── go.mod                      # Module: github.com/H0llyW00dzZ/gspay-go-sdk
+├── README.md
+├── README.id.md                # Indonesian README
+├── CONTRIBUTING.md             # Contribution guidelines
+└── CONTRIBUTING.id.md          # Indonesian contribution guidelines
 ```
 
 ## Code Style Guidelines
@@ -143,9 +114,9 @@ Use typed errors from the `errors` package with i18n support:
 // Return sentinel errors with localization
 return nil, errors.New(s.client.Language, errors.ErrInvalidTransactionID)
 
-// Return validation errors with i18n message
-return nil, errors.NewValidationError("amount", 
-    i18n.GetMessage(s.client.Language, i18n.KeyMinAmountIDR))
+// Return validation errors with i18n message (lang is the first parameter)
+return nil, errors.NewValidationError(s.client.Language, "amount",
+    s.client.I18n(errors.KeyMinAmountIDR))
 
 // Return API errors
 return nil, &errors.APIError{
@@ -155,6 +126,11 @@ return nil, &errors.APIError{
 
 // Check for API errors
 if apiErr := errors.GetAPIError(err); apiErr != nil { /* ... */ }
+
+// Check for validation errors
+if valErr := errors.GetValidationError(err); valErr != nil {
+    log.Printf("Field %s: %s", valErr.Field, valErr.Message)
+}
 ```
 
 When wrapping errors, use `errors.New` which automatically wraps causes with `%w`:
@@ -200,7 +176,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
     
     // Return mock response
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]interface{}{
+    json.NewEncoder(w).Encode(map[string]any{
         "code":    200,
         "message": "success",
         "data":    `{"payment_url":"https://example.com"}`,
@@ -210,6 +186,19 @@ defer server.Close()
 
 c := client.New("auth", "secret", client.WithBaseURL(server.URL))
 ```
+
+### Callback JSON Decoding
+
+When decoding callback JSON payloads in tests (or webhook handlers), always use `UseNumber()` to preserve `json.Number` fields:
+
+```go
+var callback payment.IDRCallback
+decoder := json.NewDecoder(strings.NewReader(callbackJSON))
+decoder.UseNumber()
+err := decoder.Decode(&callback)
+```
+
+This is critical because callback structs use `json.Number` for numeric fields (`IDRPaymentID`, `Amount`). Without `UseNumber()`, Go's default decoder converts numbers to `float64`, which can produce scientific notation (e.g., `"1.66812e+05"` instead of `"166812"`) and break signature verification.
 
 ### Running Tests
 
