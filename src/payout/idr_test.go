@@ -16,8 +16,10 @@ package payout
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -405,6 +407,70 @@ func TestIDRService_VerifyCallback(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestIDRService_VerifyCallback_JSONDecode(t *testing.T) {
+	c := client.New("auth-key", "test-secret-key")
+	svc := NewIDRService(c)
+
+	testCases := []struct {
+		name   string
+		amount string // amount as it appears in JSON
+	}{
+		{
+			name:   "integer amount from API",
+			amount: "50000",
+		},
+		{
+			name:   "decimal amount from API",
+			amount: "50000.00",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// The expected formatted amount is always 2 decimal places
+			parsed, err := strconv.ParseFloat(tc.amount, 64)
+			require.NoError(t, err)
+			formattedAmount := fmt.Sprintf("%.2f", parsed)
+
+			// Generate valid signature: idrpayout_id + account_number + amount + transaction_id + secret_key
+			sigData := fmt.Sprintf("123%s%sTXN123456789test-secret-key", "1234567890", formattedAmount)
+			validSig := signature.Generate(sigData)
+
+			// Simulate realistic callback JSON (as received from GSPAY2 API)
+			callbackJSON := fmt.Sprintf(`{
+				"idrpayout_id": 123,
+				"transaction_id": "TXN123456789",
+				"account_name": "John Doe",
+				"account_number": "1234567890",
+				"amount": %s,
+				"completed": true,
+				"payout_success": true,
+				"remark": "Payment completed successfully",
+				"signature": "%s"
+			}`, tc.amount, validSig)
+
+			// Decode using UseNumber() as recommended
+			var callback IDRCallback
+			decoder := json.NewDecoder(strings.NewReader(callbackJSON))
+			decoder.UseNumber()
+			err = decoder.Decode(&callback)
+			require.NoError(t, err)
+
+			// Verify the decoded callback fields
+			assert.Equal(t, json.Number("123"), callback.IDRPayoutID)
+			assert.Equal(t, json.Number(tc.amount), callback.Amount)
+			assert.Equal(t, "TXN123456789", callback.TransactionID)
+			assert.Equal(t, "1234567890", callback.AccountNumber)
+			assert.True(t, callback.Completed)
+			assert.True(t, callback.PayoutSuccess)
+
+			// Verify signature through the full pipeline
+			err = svc.VerifyCallback(&callback)
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func TestIDRService_VerifyCallbackWithIP(t *testing.T) {

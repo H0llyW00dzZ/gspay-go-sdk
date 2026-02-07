@@ -16,8 +16,10 @@ package payment
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
@@ -165,6 +167,38 @@ func TestUSDTService_VerifyCallback(t *testing.T) {
 				assert.ErrorIs(t, err, errors.ErrMissingCallbackField)
 			})
 		}
+	})
+}
+
+func TestUSDTService_VerifyCallback_JSONDecode(t *testing.T) {
+	c := client.New("auth-key", "test-secret-key")
+	svc := NewUSDTService(c)
+
+	t.Run("decodes and verifies callback from JSON", func(t *testing.T) {
+		// Generate valid signature: cryptopayment_id + amount + transaction_id + status + secret_key
+		validSig := signature.Generate("CRYPTO12310.50TXN1234567891test-secret-key")
+
+		// Simulate realistic callback JSON
+		callbackJSON := fmt.Sprintf(`{
+			"cryptopayment_id": "CRYPTO123",
+			"amount": "10.50",
+			"transaction_id": "TXN123456789",
+			"status": 1,
+			"signature": "%s"
+		}`, validSig)
+
+		var callback USDTCallback
+		decoder := json.NewDecoder(strings.NewReader(callbackJSON))
+		decoder.UseNumber()
+		err := decoder.Decode(&callback)
+		require.NoError(t, err)
+
+		assert.Equal(t, "CRYPTO123", callback.CryptoPaymentID)
+		assert.Equal(t, "10.50", callback.Amount)
+		assert.Equal(t, constants.StatusSuccess, callback.Status)
+
+		err = svc.VerifyCallback(&callback)
+		assert.NoError(t, err)
 	})
 }
 

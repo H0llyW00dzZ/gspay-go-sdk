@@ -16,8 +16,11 @@ package payment
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/client"
@@ -27,6 +30,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mustParseFloat parses a string to float64, panicking on failure.
+// Used only in tests to simplify amount formatting.
+func mustParseFloat(s string) float64 {
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		panic(fmt.Sprintf("mustParseFloat(%q): %v", s, err))
+	}
+	return v
+}
 
 func TestIDRService_Create(t *testing.T) {
 	t.Run("creates payment successfully", func(t *testing.T) {
@@ -364,6 +377,67 @@ func TestIDRService_VerifyCallback(t *testing.T) {
 		require.NotNil(t, valErr)
 		assert.Equal(t, "amount", valErr.Field)
 	})
+}
+
+func TestIDRService_VerifyCallback_JSONDecode(t *testing.T) {
+	c := client.New("auth-key", "test-secret-key")
+	svc := NewIDRService(c)
+
+	testCases := []struct {
+		name   string
+		amount string // amount as it appears in JSON (e.g., "61000" or "61000.00")
+	}{
+		{
+			name:   "integer amount from API",
+			amount: "61000",
+		},
+		{
+			name:   "decimal amount from API",
+			amount: "61000.00",
+		},
+		{
+			name:   "small decimal amount",
+			amount: "10000.50",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// The expected formatted amount is always 2 decimal places
+			formattedAmount := fmt.Sprintf("%.2f", mustParseFloat(tc.amount))
+
+			// Generate valid signature using the formatted amount
+			sigData := fmt.Sprintf("166812%sTXN1234567891test-secret-key", formattedAmount)
+			validSig := signature.Generate(sigData)
+
+			// Simulate realistic callback JSON (as received from GSPAY2 API)
+			callbackJSON := fmt.Sprintf(`{
+				"idrpayment_id": 166812,
+				"transaction_id": "TXN123456789",
+				"amount": %s,
+				"status": 1,
+				"remark": "Payment successful",
+				"signature": "%s"
+			}`, tc.amount, validSig)
+
+			// Decode using UseNumber() as recommended
+			var callback IDRCallback
+			decoder := json.NewDecoder(strings.NewReader(callbackJSON))
+			decoder.UseNumber()
+			err := decoder.Decode(&callback)
+			require.NoError(t, err)
+
+			// Verify the decoded callback
+			assert.Equal(t, json.Number("166812"), callback.IDRPaymentID)
+			assert.Equal(t, json.Number(tc.amount), callback.Amount)
+			assert.Equal(t, "TXN123456789", callback.TransactionID)
+			assert.Equal(t, constants.StatusSuccess, callback.Status)
+
+			// Verify signature through the full pipeline
+			err = svc.VerifyCallback(&callback)
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func TestIDRService_VerifyCallbackWithIP(t *testing.T) {
