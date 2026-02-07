@@ -285,7 +285,7 @@ MD5(cryptopayment_id + amount + transaction_id + status + secret_key)
 ## Build & Verify
 
 ```bash
-# Build all packages
+# Check for compile errors (preferred: use mcp_gopls_go_diagnostics instead)
 go build ./...
 
 # Run static analysis
@@ -297,3 +297,7 @@ go fmt ./...
 # Tidy dependencies
 go mod tidy
 ```
+
+> **Note**: Always prefer `mcp_gopls_go_diagnostics` over `go build` to check for
+> compilation errors. It provides richer diagnostics including parse errors,
+> type errors, and static analysis warnings across the entire workspace.

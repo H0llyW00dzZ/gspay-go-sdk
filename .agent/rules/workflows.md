@@ -46,7 +46,7 @@ When implementing a new feature:
    → Use table-driven tests with testify
    
 5. Verify implementation
-   → Run: go build ./...
+   → Use: mcp_gopls_go_diagnostics to check for compile errors
    → Run: go test ./...
    → Run: go vet ./...
 ```
@@ -112,8 +112,7 @@ When refactoring code:
    → Maintain backward compatibility if public API
    
 4. Verify refactoring
-   → Use: mcp_gopls_go_diagnostics
-   → Run: go build ./...
+   → Use: mcp_gopls_go_diagnostics to check for compile errors
    → Run: go test ./...
 ```
 
@@ -173,7 +172,7 @@ When debugging API-related issues:
 | Understand file deps | `mcp_gopls_go_file_context` | - |
 | Learn about libraries | DeepWiki MCP | - |
 | Run tests | `go test` (bash) | - |
-| Build verification | `go build` (bash) | `go vet` |
+| Build verification | `mcp_gopls_go_diagnostics` | `go vet` |
 
 ## Tips
 
@@ -183,3 +182,4 @@ When debugging API-related issues:
 4. **Run tests frequently** to catch issues early
 5. **Check diagnostics** before committing changes
 6. **Combine tools** for comprehensive understanding
+7. **Prefer `mcp_gopls_go_diagnostics` over `go build`** for compile error checking — it provides richer feedback
