@@ -49,7 +49,7 @@ func (q *QR) Encode(content string) ([]byte, error) {
 
 	qr, err := goqrcode.New(content, q.client.qrCfg.level)
 	if err != nil {
-		return nil, q.client.Error(errors.ErrEmptyQRContent, err)
+		return nil, q.client.Error(errors.ErrQREncodeFailed, err)
 	}
 
 	qr.ForegroundColor = q.client.qrCfg.foregroundColor

@@ -105,6 +105,7 @@ const (
 	MsgInvalidIPAddress     = i18n.MsgInvalidIPAddress
 	MsgRateLimited          = i18n.MsgRateLimited
 	MsgEmptyQRContent       = i18n.MsgEmptyQRContent
+	MsgQREncodeFailed       = i18n.MsgQREncodeFailed
 
 	// Validation error message keys
 	KeyMinAmountIDR        = i18n.MsgMinAmountIDR
