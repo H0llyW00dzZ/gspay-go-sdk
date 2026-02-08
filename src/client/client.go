@@ -35,6 +35,7 @@ type Client struct {
 	// BaseURL is the API base URL.
 	BaseURL string
 	// HTTPClient is the underlying HTTP client.
+	// See [WithHTTPClient] for configuration.
 	HTTPClient *http.Client
 	// Timeout is the request timeout duration.
 	Timeout time.Duration
@@ -58,13 +59,13 @@ type Client struct {
 	// parsedIPs contains parsed individual IP addresses.
 	parsedIPs []net.IP
 	// Language is the language for SDK error and log messages.
-	// Default is English.
+	// Default is [i18n.English]. See [WithLanguage] for configuration.
 	Language i18n.Language
 	// logger is the structured logger for the client.
-	// Default is logger.Nop (no logging).
+	// Default is [logger.Nop] (no logging). See [WithLogger] for configuration.
 	logger Logger
 	// digest is the hash function for signature generation.
-	// Default is nil (uses MD5).
+	// Default is nil (uses [crypto/md5]). See [WithDigest] for configuration.
 	digest signature.Digest
 }
 
@@ -93,7 +94,7 @@ func (c *Client) Error(sentinel error, args ...any) error {
 // Parameters:
 //   - authKey: Operator authentication key (used in URL path)
 //   - secretKey: Operator secret key (used for signature generation)
-//   - opts: Optional configuration options
+//   - opts: Optional configuration options (see [Option])
 func New(authKey, secretKey string, opts ...Option) *Client {
 	c := &Client{
 		AuthKey:      authKey,
@@ -122,7 +123,7 @@ func New(authKey, secretKey string, opts ...Option) *Client {
 }
 
 // GenerateSignature generates a signature for API requests.
-// Uses the configured digest function, or MD5 if not set.
+// Uses the configured digest function (see [WithDigest]), or [crypto/md5] if not set.
 func (c *Client) GenerateSignature(data string) string {
 	return signature.GenerateWithDigest(data, c.digest)
 }
