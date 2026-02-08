@@ -32,3 +32,11 @@ import (
 //
 //	c := client.New("auth", "secret", client.WithLogger(&MyLogger{}))
 type Logger = logger.Handler
+
+// Logger returns the configured logger instance.
+//
+// This allows services and other packages to use the same logger configuration
+// as the client for consistent logging across the SDK.
+func (c *Client) Logger() Logger {
+	return c.logger
+}

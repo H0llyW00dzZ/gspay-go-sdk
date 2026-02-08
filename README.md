@@ -33,7 +33,7 @@ go get github.com/H0llyW00dzZ/gspay-go-sdk
 ```
 gspay-go-sdk/
 ├── src/
-│   ├── client/      # HTTP client and configuration
+│   ├── client/      # HTTP client, configuration, and QR code generation
 │   │   └── logger/  # Structured logging (Handler, Std, Nop)
 │   ├── constants/   # Bank codes, channels, status codes
 │   ├── errors/      # Error types and helpers
@@ -421,6 +421,34 @@ func handlePayoutCallback(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+### QR Code Generation
+
+The SDK includes a built-in QR code generator for creating payment QR codes (e.g., for QRIS).
+
+```go
+// Configure QR options during client initialization
+c := client.New("auth-key", "secret-key",
+    client.WithQRCodeOptions(
+        client.WithQRSize(512),
+        client.WithQRRecoveryLevel(client.QRRecoveryHigh),
+    ),
+)
+
+// ... obtain payment response with QR string ...
+
+// Generate QR code image (PNG)
+pngBytes, err := c.QR().Encode(resp.QR)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Save QR code to file
+err = c.QR().WriteFile("qris.png", resp.QR)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
 ## Error Handling
 
 The SDK provides typed errors for easy handling:
@@ -685,7 +713,7 @@ The SDK currently supports **Indonesia (IDR)** payments. Future releases will ad
 - [ ] Implement payment reconciliation utilities
 - [ ] Add support for partial refunds (if supported by API)
 - [ ] Multi-currency balance queries
-- [ ] Implement QR Code mechanism for rendering/saving as image (e.g., .png)
+- [x] Implement QR Code mechanism for rendering/saving as image (e.g., .png)
 - [ ] Implement [Go generator code](https://go.dev/blog/generate) for i18n that generates code for translations with `go generate ...`
 
 ### **Contributing**

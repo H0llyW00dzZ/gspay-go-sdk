@@ -231,3 +231,23 @@ func WithDigest(digest signature.Digest) Option {
 		c.digest = digest
 	}
 }
+
+// WithQRCodeOptions sets options for QR code generation.
+//
+// These options configure the QR code methods on [Client]:
+// [Client.QREncode], [Client.QRWrite], and [Client.QRWriteFile].
+//
+// Example:
+//
+//	c := client.New("auth", "secret",
+//	    client.WithQRCodeOptions(
+//	        client.WithQRSize(512),
+//	        client.WithQRRecoveryLevel(client.QRRecoveryHigh),
+//	    ),
+//	)
+//	png, err := c.QREncode(resp.QR)
+func WithQRCodeOptions(opts ...QROption) Option {
+	return func(c *Client) {
+		c.qrOpts = opts
+	}
+}

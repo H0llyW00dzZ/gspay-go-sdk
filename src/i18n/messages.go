@@ -31,6 +31,7 @@ const (
 	MsgIPNotWhitelisted     MessageKey = "ip_not_whitelisted"
 	MsgInvalidIPAddress     MessageKey = "invalid_ip_address"
 	MsgRateLimited          MessageKey = "rate_limited"
+	MsgEmptyQRContent       MessageKey = "empty_qr_content"
 
 	// Validation error messages.
 	MsgMinAmountIDR          MessageKey = "min_amount_idr"
@@ -119,6 +120,7 @@ var translations = map[Language]map[MessageKey]string{
 		MsgIPNotWhitelisted:     "IP address not whitelisted",
 		MsgInvalidIPAddress:     "invalid IP address format",
 		MsgRateLimited:          "rate limited by API",
+		MsgEmptyQRContent:       "QR code content must not be empty",
 
 		// Validation errors
 		MsgMinAmountIDR:          "minimum amount is 10000 IDR",
@@ -204,6 +206,7 @@ var translations = map[Language]map[MessageKey]string{
 		MsgIPNotWhitelisted:     "alamat IP tidak ada dalam whitelist",
 		MsgInvalidIPAddress:     "format alamat IP tidak valid",
 		MsgRateLimited:          "dibatasi oleh API",
+		MsgEmptyQRContent:       "konten kode QR tidak boleh kosong",
 
 		// Validation errors
 		MsgMinAmountIDR:          "jumlah minimum adalah 10000 IDR",

@@ -32,7 +32,7 @@ go get github.com/H0llyW00dzZ/gspay-go-sdk
 ```
 gspay-go-sdk/
 ├── src/
-│   ├── client/      # HTTP client dan konfigurasi
+│   ├── client/      # HTTP client, konfigurasi, dan pembuatan QR code
 │   │   └── logger/  # Logging terstruktur (Handler, Std, Nop)
 │   ├── constants/   # Kode bank, channel, kode status
 │   ├── errors/      # Tipe error dan helper
@@ -420,6 +420,34 @@ func handlePayoutCallback(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+### Pembuatan Kode QR
+
+SDK ini menyertakan generator kode QR bawaan untuk membuat kode QR pembayaran (misalnya, untuk QRIS).
+
+```go
+// Konfigurasi opsi QR saat inisialisasi client
+c := client.New("auth-key", "secret-key",
+    client.WithQRCodeOptions(
+        client.WithQRSize(512),
+        client.WithQRRecoveryLevel(client.QRRecoveryHigh),
+    ),
+)
+
+// ... dapatkan respons pembayaran dengan string QR ...
+
+// Generate gambar kode QR (PNG)
+pngBytes, err := c.QR().Encode(resp.QR)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Simpan kode QR ke file
+err = c.QR().WriteFile("qris.png", resp.QR)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
 ## Penanganan Error
 
 SDK menyediakan error bertipe untuk penanganan yang mudah:
@@ -684,7 +712,7 @@ SDK saat ini mendukung pembayaran **Indonesia (IDR)**. Rilis mendatang akan mena
 - [ ] Implementasi utilitas rekonsiliasi pembayaran
 - [ ] Tambahkan dukungan untuk refund parsial (jika didukung oleh API)
 - [ ] Query saldo multi-mata uang
-- [ ] Implementasi mekanisme rendering/penyimpanan QR Code (misal: .png)
+- [x] Implementasi mekanisme rendering/penyimpanan QR Code (misal: .png)
 - [ ] Implementasi [Go generator code](https://go.dev/blog/generate) untuk i18n yang menghasilkan code untuk terjemahan dengan `go generate ...`
 
 ### **Kontribusi**
