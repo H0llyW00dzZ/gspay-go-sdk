@@ -40,6 +40,7 @@
 //   - [WithLogger]: Set custom structured logger
 //   - [WithDigest]: Set custom hash function for signatures (default: MD5)
 //   - [WithCallbackIPWhitelist]: Set allowed IPs for callback verification
+//   - [WithQRCodeOptions]: Configure QR code generation (size, recovery level, colors)
 //
 // # Retry Logic
 //

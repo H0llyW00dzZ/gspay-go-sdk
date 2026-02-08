@@ -17,16 +17,17 @@ This is an **unofficial** Go SDK for the GSPAY2 Payment Gateway API. It was inde
 - USDT cryptocurrency payments
 - Balance queries
 - Webhook callback verification
+- QR code generation (QRIS)
 
 ## Project Structure
 
 ```
 gspay-go-sdk/
 ├── .agent/rules/               # AI agent rules (this directory)
-├── examples/                   # Usage examples (basic, logging, proxy, webhook)
+├── examples/                   # Usage examples (basic, logging, proxy, qrcode, webhook)
 ├── src/
 │   ├── balance/                # Balance query service
-│   ├── client/                 # HTTP client, functional options, retry logic
+│   ├── client/                 # HTTP client, functional options, retry logic, QR encoding
 │   │   └── logger/            # Structured logging (Handler interface, Nop, Std)
 │   ├── constants/              # Constants, enums, bank codes, endpoints, status types
 │   ├── errors/                 # Typed errors with i18n (API, Validation, Localized, Sentinel)
@@ -292,6 +293,7 @@ MD5(cryptopayment_id + amount + transaction_id + status + secret_key)
 | `github.com/stretchr/testify` | Testing assertions | v1.11.1 |
 | `github.com/google/uuid` | UUID generation | v1.6.0 |
 | `github.com/valyala/bytebufferpool` | Memory-efficient byte buffer pooling | v1.0.0 |
+| `github.com/skip2/go-qrcode` | QR code generation | v0.0.0 |
 
 ## Build & Verify
 

@@ -45,6 +45,8 @@ var (
 	ErrInvalidIPAddress = errors.New("ErrInvalidIPAddress")
 	// ErrRateLimited is returned when the API returns HTTP 429 Too Many Requests.
 	ErrRateLimited = errors.New("ErrRateLimited")
+	// ErrEmptyQRContent is returned when QR code content is empty.
+	ErrEmptyQRContent = errors.New("ErrEmptyQRContent")
 )
 
 // sentinelMessages maps sentinel errors to their message keys.
@@ -60,4 +62,5 @@ var sentinelMessages = map[error]i18n.MessageKey{
 	ErrIPNotWhitelisted:     MsgIPNotWhitelisted,
 	ErrInvalidIPAddress:     MsgInvalidIPAddress,
 	ErrRateLimited:          MsgRateLimited,
+	ErrEmptyQRContent:       MsgEmptyQRContent,
 }

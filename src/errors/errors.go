@@ -104,6 +104,7 @@ const (
 	MsgIPNotWhitelisted     = i18n.MsgIPNotWhitelisted
 	MsgInvalidIPAddress     = i18n.MsgInvalidIPAddress
 	MsgRateLimited          = i18n.MsgRateLimited
+	MsgEmptyQRContent       = i18n.MsgEmptyQRContent
 
 	// Validation error message keys
 	KeyMinAmountIDR        = i18n.MsgMinAmountIDR

@@ -34,3 +34,6 @@ changelog.md
 
 # Example log files
 logging.example
+
+# Generated QR code files
+*.png
