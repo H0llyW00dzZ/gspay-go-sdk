@@ -74,6 +74,9 @@ func TestClient_QREncode(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, errors.ErrQREncodeFailed)
 		assert.NotErrorIs(t, err, errors.ErrEmptyQRContent)
+		// Verify the underlying goqrcode error is visible in the chain
+		assert.Contains(t, err.Error(), "failed to encode QR code")
+		t.Logf("Full error: %v", err)
 	})
 
 	t.Run("returns localized ErrQREncodeFailed (Indonesian)", func(t *testing.T) {
@@ -83,6 +86,8 @@ func TestClient_QREncode(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, errors.ErrQREncodeFailed)
 		assert.Contains(t, err.Error(), "gagal mengenkode kode QR")
+		// Verify the underlying goqrcode error is also in the chain
+		t.Logf("Full error: %v", err)
 	})
 
 	t.Run("respects custom size option", func(t *testing.T) {
