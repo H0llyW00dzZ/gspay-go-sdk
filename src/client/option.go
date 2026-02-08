@@ -24,7 +24,7 @@ import (
 	"github.com/H0llyW00dzZ/gspay-go-sdk/src/internal/signature"
 )
 
-// Option is a functional option for configuring the Client.
+// Option is a functional option for configuring the [Client].
 type Option func(*Client)
 
 // WithBaseURL sets a custom base URL for the API.
@@ -44,7 +44,7 @@ func WithBaseURL(baseURL string) Option {
 // WithHTTPClient sets a custom HTTP client.
 //
 // Use this to configure custom transport settings, proxies, or TLS configurations.
-// If not set, a default http.Client is used.
+// If not set, a default [net/http.Client] is used.
 //
 // Example:
 //
@@ -74,7 +74,7 @@ func WithHTTPClient(httpClient *http.Client) Option {
 //
 // The timeout applies to each individual HTTP request.
 // Minimum allowed timeout is 5 seconds; values below this are ignored.
-// Default is 30 seconds.
+// Default is 30 seconds. See [time.Duration] for duration formatting.
 //
 // Example:
 //
@@ -107,8 +107,8 @@ func WithRetries(retries int) Option {
 // WithDebug enables debug mode for the client.
 //
 // When enabled, sensitive data (auth keys, account numbers, account names) is shown
-// unsanitized in log output, and a default logger is automatically used if no custom
-// logger is set.
+// unsanitized in log output, and a [logger.Default] logger is automatically used if
+// no custom logger is set via [WithLogger].
 //
 // Example:
 //
@@ -180,7 +180,7 @@ func WithLanguage(lang i18n.Language) Option {
 	}
 }
 
-// WithLogger sets a custom logger for the client.
+// WithLogger sets a custom [logger.Handler] for the client.
 //
 // If l is nil, a [logger.Nop] is used (no logging).
 // For debug logging, use [logger.Default] or [logger.NewStd].
@@ -208,10 +208,10 @@ func WithLogger(l logger.Handler) Option {
 
 // WithDigest sets a custom hash function for signature generation.
 //
-// Note: The GSPAY2 API requires MD5 for signature verification.
+// Note: The GSPAY2 API requires [crypto/md5] for signature verification.
 // This option is provided for flexibility in case the API adds support
 // for stronger algorithms, or for use with other compatible APIs.
-// If digest is nil, MD5 is used (default behavior for GSPAY2 compatibility).
+// If digest is nil, [crypto/md5] is used (default behavior for GSPAY2 compatibility).
 //
 // Standard library hash functions can be used directly:
 //   - [crypto/md5.New] (default, required by GSPAY2)
