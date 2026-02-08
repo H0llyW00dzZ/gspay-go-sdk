@@ -66,6 +66,25 @@ func TestClient_QREncode(t *testing.T) {
 		assert.Contains(t, err.Error(), "konten kode QR tidak boleh kosong")
 	})
 
+	t.Run("returns ErrQREncodeFailed for content too long", func(t *testing.T) {
+		// QR codes have a maximum capacity of ~2,953 bytes.
+		// Generate content that exceeds this limit.
+		longContent := string(make([]byte, 5000))
+		_, err := c.QR().Encode(longContent)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, errors.ErrQREncodeFailed)
+		assert.NotErrorIs(t, err, errors.ErrEmptyQRContent)
+	})
+
+	t.Run("returns localized ErrQREncodeFailed (Indonesian)", func(t *testing.T) {
+		idClient := newTestClient(WithLanguage(i18n.Indonesian))
+		longContent := string(make([]byte, 5000))
+		_, err := idClient.QR().Encode(longContent)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, errors.ErrQREncodeFailed)
+		assert.Contains(t, err.Error(), "gagal mengenkode kode QR")
+	})
+
 	t.Run("respects custom size option", func(t *testing.T) {
 		small := newTestClient(WithQRCodeOptions(WithQRSize(64)))
 		large := newTestClient(WithQRCodeOptions(WithQRSize(1024)))

@@ -47,6 +47,8 @@ var (
 	ErrRateLimited = errors.New("ErrRateLimited")
 	// ErrEmptyQRContent is returned when QR code content is empty.
 	ErrEmptyQRContent = errors.New("ErrEmptyQRContent")
+	// ErrQREncodeFailed is returned when QR code encoding fails (e.g., content too long).
+	ErrQREncodeFailed = errors.New("ErrQREncodeFailed")
 )
 
 // sentinelMessages maps sentinel errors to their message keys.
@@ -63,4 +65,5 @@ var sentinelMessages = map[error]i18n.MessageKey{
 	ErrInvalidIPAddress:     MsgInvalidIPAddress,
 	ErrRateLimited:          MsgRateLimited,
 	ErrEmptyQRContent:       MsgEmptyQRContent,
+	ErrQREncodeFailed:       MsgQREncodeFailed,
 }
